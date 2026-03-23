@@ -3,6 +3,14 @@
     "description": "MAML Parser",
     "type": "library",
     "license": "MIT",
+    "keywords": [
+        "maml",
+        "parser",
+        "serializer",
+        "config",
+        "configuration"
+    ],
+    "homepage": "https://maml.dev",
     "autoload": {
         "psr-4": {
             "Maml\\": "src/"
