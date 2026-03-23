@@ -6,9 +6,9 @@ namespace Maml;
 
 final class Parser
 {
-    private const string NOT_MATCHED = "\x00__NOT_MATCHED__";
+    private const NOT_MATCHED = "\x00__NOT_MATCHED__";
 
-    private const array ESCAPE_MAP = [
+    private const ESCAPE_MAP = [
         '"' => '"',
         '\\' => '\\',
         'n' => "\n",

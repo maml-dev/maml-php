@@ -6,7 +6,7 @@ namespace Maml;
 
 final class Stringifier
 {
-    private const string KEY_PATTERN = '/^[A-Za-z0-9_\-]+$/';
+    private const KEY_PATTERN = '/^[A-Za-z0-9_\-]+$/';
 
     public static function stringify(mixed $value): string
     {
