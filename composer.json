@@ -5,7 +5,12 @@
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Maml\\Maml\\": "src/"
+            "Maml\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Maml\\Tests\\": "tests/"
         }
     },
     "authors": [
@@ -14,5 +19,11 @@
             "email": "anton@medv.io"
         }
     ],
-    "require": {}
+    "require": {
+        "php": ">=8.4",
+        "ext-mbstring": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.0"
+    }
 }
