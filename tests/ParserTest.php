@@ -162,49 +162,43 @@ Keeps formatting as-is.
         Maml::parse('99999999999999999999');
     }
 
-    public function testConsecutiveHighSurrogates(): void
+    public function testSurrogateCodePointsRejected(): void
     {
-        // Two high surrogates without matching low: each gets encoded separately
-        $result = Maml::parse('"\u{D800}\u{D801}"');
-        $this->assertIsString($result);
+        // Surrogate code points are not valid Unicode scalar values
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage('out of range');
+        Maml::parse('"\u{D800}"');
     }
 
-    public function testHighSurrogateBeforeNonUnicodeEscape(): void
+    public function testLowSurrogateRejected(): void
     {
-        // High surrogate followed by \n escape: surrogate should be flushed
-        $result = Maml::parse('"\u{D800}\n"');
-        $this->assertIsString($result);
-        $this->assertStringContainsString("\n", $result);
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage('out of range');
+        Maml::parse('"\u{DC00}"');
     }
 
-    public function testHighSurrogateAtEndOfString(): void
+    public function testHighSurrogateEndOfRange(): void
     {
-        // High surrogate at end of string: should be flushed
-        $result = Maml::parse('"\u{D800}"');
-        $this->assertIsString($result);
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage('out of range');
+        Maml::parse('"\u{DBFF}"');
     }
 
-    public function testHighSurrogateBeforeRegularChar(): void
+    public function testLowSurrogateEndOfRange(): void
     {
-        // High surrogate followed by regular character
-        $result = Maml::parse('"\u{D800}a"');
-        $this->assertIsString($result);
-        $this->assertStringEndsWith('a', $result);
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage('out of range');
+        Maml::parse('"\u{DFFF}"');
     }
 
-    public function testLowSurrogateWithoutHighSurrogate(): void
+    public function testUnicodeScalarValueBoundaries(): void
     {
-        // Low surrogate without preceding high: just encoded as-is
-        $result = Maml::parse('"\u{DC00}"');
-        $this->assertIsString($result);
-    }
-
-    public function testHighSurrogateFollowedByNonSurrogateUnicode(): void
-    {
-        // High surrogate followed by a regular (non-surrogate) unicode escape
-        $result = Maml::parse('"\u{D800}\u{0041}"');
-        $this->assertIsString($result);
-        $this->assertStringEndsWith('A', $result);
+        $this->assertSame(mb_chr(0x0000, 'UTF-8'), Maml::parse('"\u{0}"'));
+        $this->assertSame(mb_chr(0xD7FF, 'UTF-8'), Maml::parse('"\u{D7FF}"'));
+        $this->assertSame(mb_chr(0xE000, 'UTF-8'), Maml::parse('"\u{E000}"'));
+        $this->assertSame(mb_chr(0xFFFF, 'UTF-8'), Maml::parse('"\u{FFFF}"'));
+        $this->assertSame(mb_chr(0x10000, 'UTF-8'), Maml::parse('"\u{10000}"'));
+        $this->assertSame(mb_chr(0x10FFFF, 'UTF-8'), Maml::parse('"\u{10FFFF}"'));
     }
 
     public function testStringAllowsLiteralTab(): void
@@ -213,23 +207,30 @@ Keeps formatting as-is.
         $this->assertSame("\thello\tworld\t", $result);
     }
 
-    public function testUnescapedNullInsideString(): void
+    public function testAllControlCharactersBelowU0020RejectedExceptTab(): void
     {
-        $this->expectException(ParseException::class);
-        $this->expectExceptionMessage('Unexpected character "\\u0000" on line 1.');
-        Maml::parse("\"\x00\"");
-    }
-
-    public function testUnescapedU001FInsideString(): void
-    {
-        $this->expectException(ParseException::class);
-        Maml::parse("\"\x1F\"");
+        for ($code = 0; $code < 0x20; $code++) {
+            if ($code === 0x09) continue; // tab is allowed
+            try {
+                Maml::parse('"' . chr($code) . '"');
+                $this->fail("Expected ParseException for control character 0x" . dechex($code));
+            } catch (ParseException $e) {
+                $this->assertTrue(true); // expected
+            }
+        }
     }
 
     public function testUnescapedDelInsideString(): void
     {
         $this->expectException(ParseException::class);
         Maml::parse("\"\x7F\"");
+    }
+
+    public function testUnterminatedString(): void
+    {
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage('Unexpected end of input');
+        Maml::parse('"unterminated');
     }
 
     /**

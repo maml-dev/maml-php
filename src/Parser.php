@@ -97,9 +97,11 @@ final class Parser
         if ($this->ch !== '"') return self::NOT_MATCHED;
         $str = '';
         $escaped = false;
-        $pendingHighSurrogate = -1;
         while (true) {
             $this->next();
+            if ($this->done) {
+                throw new ParseException($this->errorSnippet());
+            }
             if ($escaped) {
                 if ($this->ch === 'u') {
                     $this->next();
@@ -134,35 +136,13 @@ final class Parser
                         );
                     }
                     $codePoint = (int) \hexdec($hex);
-                    if ($codePoint > 0x10FFFF) {
+                    if ($codePoint > 0x10FFFF || ($codePoint >= 0xD800 && $codePoint <= 0xDFFF)) {
                         throw new ParseException(
                             $this->errorSnippet('Invalid escape sequence (out of range)'),
                         );
                     }
-                    // Handle surrogate pairs
-                    if ($codePoint >= 0xD800 && $codePoint <= 0xDBFF) {
-                        // High surrogate: flush any pending, save this one
-                        if ($pendingHighSurrogate >= 0) {
-                            $str .= self::codePointToUtf8($pendingHighSurrogate);
-                        }
-                        $pendingHighSurrogate = $codePoint;
-                    } elseif ($codePoint >= 0xDC00 && $codePoint <= 0xDFFF && $pendingHighSurrogate >= 0) {
-                        // Low surrogate with pending high: combine into full code point
-                        $combined = (($pendingHighSurrogate - 0xD800) << 10) + ($codePoint - 0xDC00) + 0x10000;
-                        $str .= self::codePointToUtf8($combined);
-                        $pendingHighSurrogate = -1;
-                    } else {
-                        if ($pendingHighSurrogate >= 0) {
-                            $str .= self::codePointToUtf8($pendingHighSurrogate);
-                            $pendingHighSurrogate = -1;
-                        }
-                        $str .= self::codePointToUtf8($codePoint);
-                    }
+                    $str .= self::codePointToUtf8($codePoint);
                 } else {
-                    if ($pendingHighSurrogate >= 0) {
-                        $str .= self::codePointToUtf8($pendingHighSurrogate);
-                        $pendingHighSurrogate = -1;
-                    }
                     $escapedChar = self::ESCAPE_MAP[$this->ch] ?? null;
                     if ($escapedChar === null) {
                         throw new ParseException(
@@ -177,19 +157,12 @@ final class Parser
             } elseif ($this->ch === '\\') {
                 $escaped = true;
             } elseif ($this->ch === '"') {
-                if ($pendingHighSurrogate >= 0) {
-                    $str .= self::codePointToUtf8($pendingHighSurrogate);
-                }
                 break;
             } elseif ($this->ch === "\n") {
                 throw new ParseException($this->errorSnippet());
-            } elseif ($this->ch !== '' && (($this->ch < "\x20" && $this->ch !== "\t") || $this->ch === "\x7F")) {
+            } elseif (($this->ch < "\x20" && $this->ch !== "\t") || $this->ch === "\x7F") {
                 throw new ParseException($this->errorSnippet());
             } else {
-                if ($pendingHighSurrogate >= 0) {
-                    $str .= self::codePointToUtf8($pendingHighSurrogate);
-                    $pendingHighSurrogate = -1;
-                }
                 $str .= $this->ch;
             }
         }
@@ -468,12 +441,9 @@ final class Parser
 
     private static function codePointToUtf8(int $cp): string
     {
-        $result = \mb_chr($cp, 'UTF-8');
-        if ($result !== false && $result !== '') {
-            return $result;
-        }
-        // Fallback for surrogates (0xD800-0xDFFF) which mb_chr doesn't support
-        return \chr(0xE0 | ($cp >> 12)) . \chr(0x80 | (($cp >> 6) & 0x3F)) . \chr(0x80 | ($cp & 0x3F));
+        // Code point is guaranteed to be a valid Unicode scalar value
+        // (validated before this method is called).
+        return \mb_chr($cp, 'UTF-8');
     }
 
     private function formatChar(string $ch): string

@@ -75,6 +75,29 @@ final class StringifierTest extends TestCase
         $this->assertSame('"a\rb"', Maml::stringify("a\rb"));
     }
 
+    public function testUnicodeScalarValueBoundariesPassThrough(): void
+    {
+        $d7ff = mb_chr(0xD7FF, 'UTF-8');
+        $this->assertSame('"' . $d7ff . '"', Maml::stringify($d7ff));
+        $e000 = mb_chr(0xE000, 'UTF-8');
+        $this->assertSame('"' . $e000 . '"', Maml::stringify($e000));
+        $sup = mb_chr(0x10000, 'UTF-8');
+        $this->assertSame('"' . $sup . '"', Maml::stringify($sup));
+        $max = mb_chr(0x10FFFF, 'UTF-8');
+        $this->assertSame('"' . $max . '"', Maml::stringify($max));
+    }
+
+    public function testAllControlCharacters0x01to0x1FExceptTabAreEscaped(): void
+    {
+        for ($code = 1; $code < 0x20; $code++) {
+            if ($code === 0x09) continue; // tab uses \t
+            if ($code === 0x0A) continue; // newline uses \n
+            if ($code === 0x0D) continue; // CR uses \r
+            $result = Maml::stringify(chr($code));
+            $this->assertSame('"\u{' . strtoupper(dechex($code)) . '}"', $result);
+        }
+    }
+
     public function testArray(): void
     {
         $expected = "[\n  1\n  2\n  3\n]";
