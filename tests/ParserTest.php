@@ -214,6 +214,18 @@ Keeps formatting as-is.
         Maml::parse("\"\x00\"");
     }
 
+    public function testUnescapedU001FInsideString(): void
+    {
+        $this->expectException(ParseException::class);
+        Maml::parse("\"\x1F\"");
+    }
+
+    public function testUnescapedDelInsideString(): void
+    {
+        $this->expectException(ParseException::class);
+        Maml::parse("\"\x7F\"");
+    }
+
     /**
      * @return array<string, array{string, string, string}>
      */
