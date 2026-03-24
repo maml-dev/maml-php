@@ -49,6 +49,12 @@ final class StringifierTest extends TestCase
         $this->assertSame('"foo"', Maml::stringify('foo'));
     }
 
+    public function testStringWithQuoteAndBackslash(): void
+    {
+        $this->assertSame('"say \\"hi\\""', Maml::stringify('say "hi"'));
+        $this->assertSame('"a\\\\b"', Maml::stringify('a\\b'));
+    }
+
     public function testStringWithTab(): void
     {
         $this->assertSame('"hello\tworld"', Maml::stringify("hello\tworld"));
