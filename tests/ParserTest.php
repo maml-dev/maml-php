@@ -207,6 +207,12 @@ Keeps formatting as-is.
         $this->assertStringEndsWith('A', $result);
     }
 
+    public function testStringAllowsLiteralTab(): void
+    {
+        $result = Maml::parse("\"\thello\tworld\t\"");
+        $this->assertSame("\thello\tworld\t", $result);
+    }
+
     public function testUnescapedNullInsideString(): void
     {
         $this->expectException(ParseException::class);

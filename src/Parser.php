@@ -183,7 +183,7 @@ final class Parser
                 break;
             } elseif ($this->ch === "\n") {
                 throw new ParseException($this->errorSnippet());
-            } elseif ($this->ch !== '' && ($this->ch < "\x20" || $this->ch === "\x7F")) {
+            } elseif ($this->ch !== '' && (($this->ch < "\x20" && $this->ch !== "\t") || $this->ch === "\x7F")) {
                 throw new ParseException($this->errorSnippet());
             } else {
                 if ($pendingHighSurrogate >= 0) {
