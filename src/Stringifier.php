@@ -32,7 +32,7 @@ final class Stringifier
             return $str;
         }
         if (is_string($value)) {
-            return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+            return self::quoteString($value);
         }
         if (is_array($value)) {
             if (array_is_list($value)) {
@@ -81,7 +81,33 @@ final class Stringifier
         if (preg_match(self::KEY_PATTERN, $key)) {
             return $key;
         }
-        return json_encode($key, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        return self::quoteString($key);
+    }
+
+    private static function quoteString(string $s): string
+    {
+        $out = '"';
+        $len = mb_strlen($s, 'UTF-8');
+        for ($i = 0; $i < $len; $i++) {
+            $c = mb_substr($s, $i, 1, 'UTF-8');
+            $code = mb_ord($c, 'UTF-8');
+            if ($c === '"') {
+                $out .= '\\"';
+            } elseif ($c === '\\') {
+                $out .= '\\\\';
+            } elseif ($c === "\n") {
+                $out .= '\\n';
+            } elseif ($c === "\r") {
+                $out .= '\\r';
+            } elseif ($c === "\t") {
+                $out .= '\\t';
+            } elseif ($code < 0x20 || $code === 0x7F) {
+                $out .= '\\u{' . strtoupper(dechex($code)) . '}';
+            } else {
+                $out .= $c;
+            }
+        }
+        return $out . '"';
     }
 
     private static function getIndent(int $level): string

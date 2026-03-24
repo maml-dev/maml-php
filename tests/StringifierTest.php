@@ -49,6 +49,26 @@ final class StringifierTest extends TestCase
         $this->assertSame('"foo"', Maml::stringify('foo'));
     }
 
+    public function testStringWithTab(): void
+    {
+        $this->assertSame('"hello\tworld"', Maml::stringify("hello\tworld"));
+    }
+
+    public function testStringWithControlCharacters(): void
+    {
+        $this->assertSame('"\u{0}"', Maml::stringify("\x00"));
+        $this->assertSame('"\u{8}"', Maml::stringify("\x08"));
+        $this->assertSame('"\u{C}"', Maml::stringify("\x0C"));
+        $this->assertSame('"\u{1F}"', Maml::stringify("\x1F"));
+        $this->assertSame('"\u{7F}"', Maml::stringify("\x7F"));
+    }
+
+    public function testStringWithNewlineAndCarriageReturn(): void
+    {
+        $this->assertSame('"a\nb"', Maml::stringify("a\nb"));
+        $this->assertSame('"a\rb"', Maml::stringify("a\rb"));
+    }
+
     public function testArray(): void
     {
         $expected = "[\n  1\n  2\n  3\n]";
