@@ -12,6 +12,7 @@ use Maml\Ast\FloatNode;
 use Maml\Ast\IntegerNode;
 use Maml\Ast\NullNode;
 use Maml\Ast\ObjectNode;
+use Maml\Ast\Position;
 use Maml\Ast\RawStringNode;
 use Maml\Ast\StringNode;
 
@@ -68,5 +69,19 @@ final class Maml
             $result[$prop->key->value] = self::toValue($prop->value);
         }
         return $result;
+    }
+
+    public static function errorSnippet(string $source, Position $pos, string $message): string
+    {
+        $offset = $pos->offset;
+        $pre = \substr($source, \max(0, $offset - 40), \min($offset, 40));
+        $lines = \explode("\n", $pre);
+        $lastLine = \end($lines) ?: '';
+        $postParts = \explode("\n", \substr($source, $offset, 40), 2);
+        $postfix = $postParts[0];
+
+        $snippet = "    {$lastLine}{$postfix}\n";
+        $pointer = '    ' . \str_repeat('.', \max(0, \strlen($lastLine) - 1)) . "^\n";
+        return "{$message} on line {$pos->line}.\n\n{$snippet}{$pointer}";
     }
 }
