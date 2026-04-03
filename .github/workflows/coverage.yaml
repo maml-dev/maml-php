@@ -8,7 +8,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
 
@@ -22,4 +22,11 @@ jobs:
         run: composer install --no-interaction --prefer-dist
 
       - name: Run tests with coverage
-        run: vendor/bin/phpunit --coverage-text --min=100
+        run: |
+          vendor/bin/phpunit --coverage-clover coverage.xml
+          LINE_RATE=$(php -r '$x = simplexml_load_file("coverage.xml"); $m = $x->project->metrics; $pct = round((int)$m["coveredstatements"] / (int)$m["statements"] * 100, 2); echo $pct;')
+          echo "Line coverage: ${LINE_RATE}%"
+          if [ "$LINE_RATE" != "100" ]; then
+            echo "::error::Line coverage is ${LINE_RATE}%, required 100%"
+            exit 1
+          fi
