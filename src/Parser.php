@@ -481,11 +481,8 @@ final class Parser
 
     private function formatChar(string $ch): string
     {
-        if ($ch === '') {
-            return '""';
-        }
         $ord = \ord($ch);
-        if ($ord < 0x80) {
+        if ($ch === '' || $ord < 0x80) {
             return (string) \json_encode($ch, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
         }
         // Multi-byte UTF-8: extract full character from source at current position

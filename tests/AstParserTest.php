@@ -575,6 +575,26 @@ final class AstParserTest extends TestCase
         Maml::parseAst('"\u{D800}"');
     }
 
+    public function testErrorOnUnterminatedString(): void
+    {
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage('Unexpected end of input');
+        Maml::parseAst('"unterminated');
+    }
+
+    public function testErrorOnControlCharInString(): void
+    {
+        $this->expectException(ParseException::class);
+        Maml::parseAst("\"\x01\"");
+    }
+
+    public function testRawStringWithLeadingCRLF(): void
+    {
+        $doc = Maml::parseAst("\"\"\"\r\ntext\"\"\"");
+        $this->assertInstanceOf(RawStringNode::class, $doc->value);
+        $this->assertSame('text', $doc->value->value);
+    }
+
     /**
      * @return array<string, array{string, string, string}>
      */

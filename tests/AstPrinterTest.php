@@ -56,6 +56,31 @@ final class AstPrinterTest extends TestCase
         $this->assertPrintRoundTrip("\"\"\"\nline1\nline2\n\"\"\"");
     }
 
+    public function testPrintStringWithQuote(): void
+    {
+        $this->assertPrintRoundTrip('"say \\"hello\\""');
+    }
+
+    public function testPrintStringWithBackslash(): void
+    {
+        $this->assertPrintRoundTrip('"a\\\\b"');
+    }
+
+    public function testPrintStringWithCarriageReturn(): void
+    {
+        $this->assertPrintRoundTrip('"a\\rb"');
+    }
+
+    public function testPrintStringWithTab(): void
+    {
+        $this->assertPrintRoundTrip('"a\\tb"');
+    }
+
+    public function testPrintStringWithControlChar(): void
+    {
+        $this->assertPrintRoundTrip('"\\u{1}"');
+    }
+
     public function testPrintTrue(): void
     {
         $this->assertPrintRoundTrip('true');

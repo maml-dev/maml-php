@@ -322,10 +322,7 @@ final class AstParser
         while (true) {
             $keyStart = $this->here();
             if ($this->ch === '"') {
-                $key = $this->parseString();
-                if ($key === null) {
-                    throw new ParseException($this->errorSnippet());
-                }
+                $key = $this->parseString() ?? throw new ParseException($this->errorSnippet());
             } else {
                 $key = $this->parseKey();
             }
@@ -535,11 +532,8 @@ final class AstParser
 
     private function formatChar(string $ch): string
     {
-        if ($ch === '') {
-            return '""';
-        }
         $ord = \ord($ch);
-        if ($ord < 0x80) {
+        if ($ch === '' || $ord < 0x80) {
             return (string) \json_encode($ch, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
         }
         $bytePos = $this->pos - 1;
