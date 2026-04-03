@@ -81,7 +81,7 @@ final class Maml
         $postfix = $postParts[0];
 
         $snippet = "    {$lastLine}{$postfix}\n";
-        $pointer = '    ' . \str_repeat('.', \max(0, \strlen($lastLine) - 1)) . "^\n";
+        $pointer = '    ' . \str_repeat('.', \strlen($lastLine)) . "^\n";
         return "{$message} on line {$pos->line}.\n\n{$snippet}{$pointer}";
     }
 }

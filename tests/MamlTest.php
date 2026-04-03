@@ -30,9 +30,10 @@ final class MamlTest extends TestCase
         $node = $doc->value->properties[1]->value;
 
         $result = Maml::errorSnippet($source, $node->span->start, 'Invalid value');
-        $this->assertStringContainsString('Invalid value on line 3.', $result);
-        $this->assertStringContainsString('timeout: -1', $result);
-        $this->assertStringContainsString('^', $result);
+        $this->assertSame(
+            "Invalid value on line 3.\n\n      timeout: -1\n    ...........^\n",
+            $result,
+        );
     }
 
     public function testErrorSnippetAtStartOfSource(): void
@@ -41,9 +42,10 @@ final class MamlTest extends TestCase
         $doc = Maml::parseAst($source);
 
         $result = Maml::errorSnippet($source, $doc->value->span->start, 'Expected object');
-        $this->assertStringContainsString('Expected object on line 1.', $result);
-        $this->assertStringContainsString('null', $result);
-        $this->assertStringContainsString('^', $result);
+        $this->assertSame(
+            "Expected object on line 1.\n\n    null\n    ^\n",
+            $result,
+        );
     }
 
     public function testErrorSnippetOnNestedNode(): void
@@ -58,7 +60,9 @@ final class MamlTest extends TestCase
         $countNode = $inner->properties[1]->value;
 
         $result = Maml::errorSnippet($source, $countNode->span->start, 'Count must be positive');
-        $this->assertStringContainsString('Count must be positive on line 3.', $result);
-        $this->assertStringContainsString('^', $result);
+        $this->assertSame(
+            "Count must be positive on line 3.\n\n        {name: \"x\", count: 0}\n    .......................^\n",
+            $result,
+        );
     }
 }
