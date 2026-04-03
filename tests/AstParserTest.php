@@ -80,6 +80,32 @@ final class AstParserTest extends TestCase
         $this->assertSame('-100', $node->raw);
     }
 
+    public function testLargeIntegerNode(): void
+    {
+        $node = Maml::parseAst('9007199254740992')->value;
+        $this->assertInstanceOf(IntegerNode::class, $node);
+        $this->assertSame(9007199254740992, $node->value);
+        $this->assertSame('9007199254740992', $node->raw);
+    }
+
+    public function testI64MaxBoundary(): void
+    {
+        $max = (string) PHP_INT_MAX; // 9223372036854775807
+        $node = Maml::parseAst($max)->value;
+        $this->assertInstanceOf(IntegerNode::class, $node);
+        $this->assertSame(PHP_INT_MAX, $node->value);
+        $this->assertSame($max, $node->raw);
+    }
+
+    public function testI64MinBoundary(): void
+    {
+        $min = (string) PHP_INT_MIN; // -9223372036854775808
+        $node = Maml::parseAst($min)->value;
+        $this->assertInstanceOf(IntegerNode::class, $node);
+        $this->assertSame(PHP_INT_MIN, $node->value);
+        $this->assertSame($min, $node->raw);
+    }
+
     public function testFloatNode(): void
     {
         $node = Maml::parseAst('3.14')->value;

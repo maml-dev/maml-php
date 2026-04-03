@@ -81,6 +81,58 @@ final class AstPrinterTest extends TestCase
         $this->assertPrintRoundTrip('"\\u{1}"');
     }
 
+    public function testPrintStringWithAllControlChars(): void
+    {
+        for ($code = 0x00; $code < 0x20; $code++) {
+            if ($code === 0x09) {
+                continue;
+            } // tab uses \t
+            if ($code === 0x0A) {
+                continue;
+            } // newline uses \n
+            if ($code === 0x0D) {
+                continue;
+            } // CR uses \r
+            $escaped = '"\\u{' . strtoupper(dechex($code)) . '}"';
+            $this->assertPrintRoundTrip($escaped);
+        }
+        // DEL (0x7F)
+        $this->assertPrintRoundTrip('"\\u{7F}"');
+    }
+
+    public function testPrintUnicodeBoundaryCharsPassThrough(): void
+    {
+        // U+D7FF (last before surrogates)
+        $d7ff = '"' . mb_chr(0xD7FF, 'UTF-8') . '"';
+        $this->assertPrintRoundTrip($d7ff);
+        // U+E000 (first after surrogates)
+        $e000 = '"' . mb_chr(0xE000, 'UTF-8') . '"';
+        $this->assertPrintRoundTrip($e000);
+        // U+10000 (first supplementary plane)
+        $sup = '"' . mb_chr(0x10000, 'UTF-8') . '"';
+        $this->assertPrintRoundTrip($sup);
+        // U+10FFFF (max unicode)
+        $max = '"' . mb_chr(0x10FFFF, 'UTF-8') . '"';
+        $this->assertPrintRoundTrip($max);
+    }
+
+    // ---- 64-bit integer boundary round-trips ----
+
+    public function testPrintLargeInteger(): void
+    {
+        $this->assertPrintRoundTrip('9007199254740992');
+    }
+
+    public function testPrintI64Max(): void
+    {
+        $this->assertPrintRoundTrip((string) PHP_INT_MAX);
+    }
+
+    public function testPrintI64Min(): void
+    {
+        $this->assertPrintRoundTrip((string) PHP_INT_MIN);
+    }
+
     public function testPrintTrue(): void
     {
         $this->assertPrintRoundTrip('true');
