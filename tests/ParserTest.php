@@ -104,7 +104,9 @@ Keeps formatting as-is.
         $this->assertIsArray($result);
         $this->assertSame('MAML', $result['project']);
         $this->assertSame(['minimal', 'readable'], $result['tags']);
-        $this->assertSame(1, $result['spec']['version']);
+        /** @var array<string, mixed> $spec */
+        $spec = $result['spec'];
+        $this->assertSame(1, $spec['version']);
     }
 
     public function testLargeInteger(): void
@@ -210,12 +212,14 @@ Keeps formatting as-is.
     public function testAllControlCharactersBelowU0020RejectedExceptTab(): void
     {
         for ($code = 0; $code < 0x20; $code++) {
-            if ($code === 0x09) continue; // tab is allowed
+            if ($code === 0x09) {
+                continue;
+            } // tab is allowed
             try {
                 Maml::parse('"' . chr($code) . '"');
-                $this->fail("Expected ParseException for control character 0x" . dechex($code));
+                $this->fail('Expected ParseException for control character 0x' . dechex($code));
             } catch (ParseException $e) {
-                $this->assertTrue(true); // expected
+                $this->assertInstanceOf(ParseException::class, $e);
             }
         }
     }
@@ -238,12 +242,14 @@ Keeps formatting as-is.
      */
     private static function loadTestCases(string $filename): array
     {
-        $content = file_get_contents(__DIR__ . '/fixtures/' . $filename);
+        $content = (string) file_get_contents(__DIR__ . '/fixtures/' . $filename);
         $cases = explode('===', $content);
         $result = [];
         foreach ($cases as $case) {
             $case = trim($case);
-            if ($case === '') continue;
+            if ($case === '') {
+                continue;
+            }
             $lines = explode("\n", $case, 2);
             $name = trim($lines[0]);
             [$input, $expected] = explode('---', $lines[1], 2);

@@ -43,6 +43,9 @@ final class Stringifier
         throw new \InvalidArgumentException('Unsupported value type: ' . get_debug_type($value));
     }
 
+    /**
+     * @param list<mixed> $arr
+     */
     private static function stringifyArray(array $arr, int $level): string
     {
         if (count($arr) === 0) {
@@ -60,6 +63,9 @@ final class Stringifier
         return $out . "\n" . $parentIndent . ']';
     }
 
+    /**
+     * @param array<int|string, mixed> $obj
+     */
     private static function stringifyObject(array $obj, int $level): string
     {
         $keys = array_keys($obj);

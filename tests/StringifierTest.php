@@ -90,9 +90,15 @@ final class StringifierTest extends TestCase
     public function testAllControlCharacters0x01to0x1FExceptTabAreEscaped(): void
     {
         for ($code = 1; $code < 0x20; $code++) {
-            if ($code === 0x09) continue; // tab uses \t
-            if ($code === 0x0A) continue; // newline uses \n
-            if ($code === 0x0D) continue; // CR uses \r
+            if ($code === 0x09) {
+                continue;
+            } // tab uses \t
+            if ($code === 0x0A) {
+                continue;
+            } // newline uses \n
+            if ($code === 0x0D) {
+                continue;
+            } // CR uses \r
             $result = Maml::stringify(chr($code));
             $this->assertSame('"\u{' . strtoupper(dechex($code)) . '}"', $result);
         }

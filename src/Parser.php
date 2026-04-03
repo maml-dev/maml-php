@@ -66,35 +66,53 @@ final class Parser
         $this->skipWhitespace();
 
         $v = $this->parseRawString();
-        if ($v !== self::NOT_MATCHED) return $v;
+        if ($v !== self::NOT_MATCHED) {
+            return $v;
+        }
 
         $v = $this->parseString();
-        if ($v !== self::NOT_MATCHED) return $v;
+        if ($v !== self::NOT_MATCHED) {
+            return $v;
+        }
 
         $v = $this->parseNumber();
-        if ($v !== self::NOT_MATCHED) return $v;
+        if ($v !== self::NOT_MATCHED) {
+            return $v;
+        }
 
         $v = $this->parseObject();
-        if ($v !== self::NOT_MATCHED) return $v;
+        if ($v !== self::NOT_MATCHED) {
+            return $v;
+        }
 
         $v = $this->parseArray();
-        if ($v !== self::NOT_MATCHED) return $v;
+        if ($v !== self::NOT_MATCHED) {
+            return $v;
+        }
 
         $v = $this->parseKeyword('true', true);
-        if ($v !== self::NOT_MATCHED) return $v;
+        if ($v !== self::NOT_MATCHED) {
+            return $v;
+        }
 
         $v = $this->parseKeyword('false', false);
-        if ($v !== self::NOT_MATCHED) return $v;
+        if ($v !== self::NOT_MATCHED) {
+            return $v;
+        }
 
         $v = $this->parseKeyword('null', null);
-        if ($v !== self::NOT_MATCHED) return $v;
+        if ($v !== self::NOT_MATCHED) {
+            return $v;
+        }
 
         return self::NOT_MATCHED;
     }
 
     private function parseString(): mixed
     {
-        if ($this->ch !== '"') return self::NOT_MATCHED;
+        if ($this->ch !== '"') {
+            return self::NOT_MATCHED;
+        }
         $str = '';
         $escaped = false;
         while (true) {
@@ -115,7 +133,9 @@ final class Parser
                     $hex = '';
                     while (true) {
                         $this->next();
-                        if ($this->ch === '}') break;
+                        if ($this->ch === '}') {
+                            break;
+                        }
                         if (!$this->isHexDigit($this->ch)) {
                             throw new ParseException(
                                 $this->errorSnippet(
@@ -172,7 +192,9 @@ final class Parser
 
     private function parseRawString(): mixed
     {
-        if ($this->ch !== '"' || $this->lookahead(2) !== '""') return self::NOT_MATCHED;
+        if ($this->ch !== '"' || $this->lookahead(2) !== '""') {
+            return self::NOT_MATCHED;
+        }
         $this->next();
         $this->next();
         $this->next();
@@ -204,7 +226,9 @@ final class Parser
 
     private function parseNumber(): mixed
     {
-        if (!$this->isDigit($this->ch) && $this->ch !== '-') return self::NOT_MATCHED;
+        if (!$this->isDigit($this->ch) && $this->ch !== '-') {
+            return self::NOT_MATCHED;
+        }
         $numStr = '';
         $float = false;
         if ($this->ch === '-') {
@@ -256,7 +280,9 @@ final class Parser
 
     private function parseObject(): mixed
     {
-        if ($this->ch !== '{') return self::NOT_MATCHED;
+        if ($this->ch !== '{') {
+            return self::NOT_MATCHED;
+        }
         $this->next();
         $this->skipWhitespace();
         $obj = [];
@@ -267,6 +293,7 @@ final class Parser
         while (true) {
             $keyPos = $this->pos;
             if ($this->ch === '"') {
+                /** @var string $key */
                 $key = $this->parseString();
             } else {
                 $key = $this->parseKey();
@@ -321,7 +348,9 @@ final class Parser
 
     private function parseArray(): mixed
     {
-        if ($this->ch !== '[') return self::NOT_MATCHED;
+        if ($this->ch !== '[') {
+            return self::NOT_MATCHED;
+        }
         $this->next();
         $this->skipWhitespace();
         $array = [];
@@ -356,7 +385,9 @@ final class Parser
 
     private function parseKeyword(string $name, mixed $value): mixed
     {
-        if ($this->ch !== $name[0]) return self::NOT_MATCHED;
+        if ($this->ch !== $name[0]) {
+            return self::NOT_MATCHED;
+        }
         for ($i = 1; $i < \strlen($name); $i++) {
             $this->next();
             if ($this->ch !== $name[$i]) {
@@ -365,11 +396,11 @@ final class Parser
         }
         $this->next();
         if (
-            $this->isWhitespace($this->ch) ||
-            $this->ch === ',' ||
-            $this->ch === '}' ||
-            $this->ch === ']' ||
-            $this->done
+            $this->isWhitespace($this->ch)
+            || $this->ch === ','
+            || $this->ch === '}'
+            || $this->ch === ']'
+            || $this->done
         ) {
             return $value;
         }
@@ -415,16 +446,18 @@ final class Parser
 
     private function isKeyChar(string $ch): bool
     {
-        return ($ch >= 'A' && $ch <= 'Z') ||
-            ($ch >= 'a' && $ch <= 'z') ||
-            ($ch >= '0' && $ch <= '9') ||
-            $ch === '_' ||
-            $ch === '-';
+        return ($ch >= 'A' && $ch <= 'Z')
+            || ($ch >= 'a' && $ch <= 'z')
+            || ($ch >= '0' && $ch <= '9')
+            || $ch === '_'
+            || $ch === '-';
     }
 
     private function toSafeNumber(string $str): int|float
     {
-        if ($str === '-0') return -0.0;
+        if ($str === '-0') {
+            return -0.0;
+        }
         $int = (int) $str;
         if ((string) $int === $str) {
             return $int;
@@ -448,10 +481,12 @@ final class Parser
 
     private function formatChar(string $ch): string
     {
-        if ($ch === '') return '""';
+        if ($ch === '') {
+            return '""';
+        }
         $ord = \ord($ch);
         if ($ord < 0x80) {
-            return \json_encode($ch, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
+            return (string) \json_encode($ch, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
         }
         // Multi-byte UTF-8: extract full character from source at current position
         $bytePos = $this->pos - 1;
@@ -463,7 +498,7 @@ final class Parser
             default => 4,
         };
         $fullChar = \substr($this->source, $bytePos, $len);
-        return \json_encode($fullChar, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
+        return (string) \json_encode($fullChar, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
     }
 
     private function errorSnippet(string $message = ''): string
@@ -485,7 +520,7 @@ final class Parser
         $lines = \explode("\n", $pre);
         $lastLine = \end($lines) ?: '';
         $postParts = \explode("\n", \substr($this->source, $this->pos, 40), 2);
-        $postfix = $postParts[0] ?? '';
+        $postfix = $postParts[0];
 
         if ($lastLine === '') {
             // error at "\n"

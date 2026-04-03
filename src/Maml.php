@@ -41,24 +41,32 @@ final class Maml
     public static function toValue(
         Document|StringNode|RawStringNode|IntegerNode|FloatNode|BooleanNode|NullNode|ObjectNode|ArrayNode $node,
     ): mixed {
-        if ($node instanceof Document) return self::toValue($node->value);
-        if ($node instanceof StringNode || $node instanceof RawStringNode) return $node->value;
-        if ($node instanceof IntegerNode || $node instanceof FloatNode) return $node->value;
-        if ($node instanceof BooleanNode) return $node->value;
-        if ($node instanceof NullNode) return null;
+        if ($node instanceof Document) {
+            return self::toValue($node->value);
+        }
+        if ($node instanceof StringNode || $node instanceof RawStringNode) {
+            return $node->value;
+        }
+        if ($node instanceof IntegerNode || $node instanceof FloatNode) {
+            return $node->value;
+        }
+        if ($node instanceof BooleanNode) {
+            return $node->value;
+        }
+        if ($node instanceof NullNode) {
+            return null;
+        }
         if ($node instanceof ArrayNode) {
             return \array_map(
                 fn(Element $el) => self::toValue($el->value),
                 $node->elements,
             );
         }
-        if ($node instanceof ObjectNode) {
-            $result = [];
-            foreach ($node->properties as $prop) {
-                $result[$prop->key->value] = self::toValue($prop->value);
-            }
-            return $result;
+        // $node is ObjectNode at this point (all other types handled above)
+        $result = [];
+        foreach ($node->properties as $prop) {
+            $result[$prop->key->value] = self::toValue($prop->value);
         }
-        throw new \InvalidArgumentException('Unknown node type');
+        return $result;
     }
 }

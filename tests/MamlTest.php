@@ -17,8 +17,6 @@ final class MamlTest extends TestCase
         $this->assertSame(['foo' => 'bar', 'nums' => [1, 2, 3]], $parsed);
 
         $stringified = Maml::stringify($parsed);
-        $this->assertIsString($stringified);
-
         $reparsed = Maml::parse($stringified);
         $this->assertSame($parsed, $reparsed);
     }

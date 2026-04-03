@@ -40,12 +40,14 @@ final class ToValueTest extends TestCase
      */
     private static function loadTestCases(string $filename): array
     {
-        $content = file_get_contents(__DIR__ . '/fixtures/' . $filename);
+        $content = (string) file_get_contents(__DIR__ . '/fixtures/' . $filename);
         $cases = explode('===', $content);
         $result = [];
         foreach ($cases as $case) {
             $case = trim($case);
-            if ($case === '') continue;
+            if ($case === '') {
+                continue;
+            }
             $lines = explode("\n", $case, 2);
             $name = trim($lines[0]);
             [$input, $expected] = explode('---', $lines[1], 2);

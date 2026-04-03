@@ -117,7 +117,6 @@ final class AstParserTest extends TestCase
         $node = Maml::parseAst('null')->value;
         $this->assertInstanceOf(NullNode::class, $node);
         $this->assertSame('Null', $node->type);
-        $this->assertNull($node->value);
     }
 
     public function testEmptyObject(): void
@@ -378,16 +377,20 @@ final class AstParserTest extends TestCase
     public function testObjectLeadingAndTrailingOnSameProperty(): void
     {
         $doc = Maml::parseAst("{\n  # lead\n  a: 1 # trail\n}");
+        $this->assertInstanceOf(ObjectNode::class, $doc->value);
         $prop = $doc->value->properties[0];
         $this->assertCount(1, $prop->leadingComments);
         $this->assertSame(' lead', $prop->leadingComments[0]->value);
+        $this->assertNotNull($prop->trailingComment);
         $this->assertSame(' trail', $prop->trailingComment->value);
     }
 
     public function testObjectCommentsBetweenProperties(): void
     {
         $doc = Maml::parseAst("{\n  a: 1 # after a\n  # before b\n  b: 2\n}");
+        $this->assertInstanceOf(ObjectNode::class, $doc->value);
         $props = $doc->value->properties;
+        $this->assertNotNull($props[0]->trailingComment);
         $this->assertSame(' after a', $props[0]->trailingComment->value);
         $this->assertSame(' before b', $props[1]->leadingComments[0]->value);
     }
@@ -399,7 +402,9 @@ final class AstParserTest extends TestCase
         $doc = Maml::parseAst("[\n  1 # one\n  2 # two\n]");
         $arr = $doc->value;
         $this->assertInstanceOf(ArrayNode::class, $arr);
+        $this->assertNotNull($arr->elements[0]->trailingComment);
         $this->assertSame(' one', $arr->elements[0]->trailingComment->value);
+        $this->assertNotNull($arr->elements[1]->trailingComment);
         $this->assertSame(' two', $arr->elements[1]->trailingComment->value);
         $this->assertCount(0, $arr->danglingComments);
     }
@@ -447,16 +452,20 @@ final class AstParserTest extends TestCase
     public function testArrayLeadingAndTrailingOnSameElement(): void
     {
         $doc = Maml::parseAst("[\n  # lead\n  1 # trail\n]");
+        $this->assertInstanceOf(ArrayNode::class, $doc->value);
         $el = $doc->value->elements[0];
         $this->assertCount(1, $el->leadingComments);
         $this->assertSame(' lead', $el->leadingComments[0]->value);
+        $this->assertNotNull($el->trailingComment);
         $this->assertSame(' trail', $el->trailingComment->value);
     }
 
     public function testArrayCommentsBetweenElements(): void
     {
         $doc = Maml::parseAst("[\n  1 # after 1\n  # before 2\n  2\n]");
+        $this->assertInstanceOf(ArrayNode::class, $doc->value);
         $els = $doc->value->elements;
+        $this->assertNotNull($els[0]->trailingComment);
         $this->assertSame(' after 1', $els[0]->trailingComment->value);
         $this->assertSame(' before 2', $els[1]->leadingComments[0]->value);
     }
@@ -466,6 +475,7 @@ final class AstParserTest extends TestCase
     public function testObjectBlankLineBetweenProperties(): void
     {
         $doc = Maml::parseAst("{\n  a: 1\n\n  b: 2\n}");
+        $this->assertInstanceOf(ObjectNode::class, $doc->value);
         $props = $doc->value->properties;
         $this->assertFalse($props[0]->emptyLineBefore);
         $this->assertTrue($props[1]->emptyLineBefore);
@@ -474,6 +484,7 @@ final class AstParserTest extends TestCase
     public function testObjectNoBlankLineBetweenProperties(): void
     {
         $doc = Maml::parseAst("{\n  a: 1\n  b: 2\n}");
+        $this->assertInstanceOf(ObjectNode::class, $doc->value);
         $props = $doc->value->properties;
         $this->assertFalse($props[0]->emptyLineBefore);
         $this->assertFalse($props[1]->emptyLineBefore);
@@ -482,6 +493,7 @@ final class AstParserTest extends TestCase
     public function testObjectBlankLineBeforeCommentGroup(): void
     {
         $doc = Maml::parseAst("{\n  a: 1\n\n  # section\n  b: 2\n}");
+        $this->assertInstanceOf(ObjectNode::class, $doc->value);
         $props = $doc->value->properties;
         $this->assertTrue($props[1]->emptyLineBefore);
     }
@@ -489,6 +501,7 @@ final class AstParserTest extends TestCase
     public function testObjectNestedBlankLines(): void
     {
         $doc = Maml::parseAst("{\n  x: {\n    a: 1\n\n    b: 2\n  }\n}");
+        $this->assertInstanceOf(ObjectNode::class, $doc->value);
         $inner = $doc->value->properties[0]->value;
         $this->assertInstanceOf(ObjectNode::class, $inner);
         $this->assertFalse($inner->properties[0]->emptyLineBefore);
@@ -500,6 +513,7 @@ final class AstParserTest extends TestCase
     public function testArrayBlankLineBetweenElements(): void
     {
         $doc = Maml::parseAst("[\n  1\n\n  2\n]");
+        $this->assertInstanceOf(ArrayNode::class, $doc->value);
         $els = $doc->value->elements;
         $this->assertFalse($els[0]->emptyLineBefore);
         $this->assertTrue($els[1]->emptyLineBefore);
@@ -508,6 +522,7 @@ final class AstParserTest extends TestCase
     public function testArrayNoBlankLineBetweenElements(): void
     {
         $doc = Maml::parseAst("[\n  1\n  2\n]");
+        $this->assertInstanceOf(ArrayNode::class, $doc->value);
         $els = $doc->value->elements;
         $this->assertFalse($els[0]->emptyLineBefore);
         $this->assertFalse($els[1]->emptyLineBefore);
@@ -516,6 +531,7 @@ final class AstParserTest extends TestCase
     public function testArrayNestedBlankLines(): void
     {
         $doc = Maml::parseAst("[\n  [\n    1\n\n    2\n  ]\n]");
+        $this->assertInstanceOf(ArrayNode::class, $doc->value);
         $inner = $doc->value->elements[0]->value;
         $this->assertInstanceOf(ArrayNode::class, $inner);
         $this->assertFalse($inner->elements[0]->emptyLineBefore);
@@ -525,6 +541,7 @@ final class AstParserTest extends TestCase
     public function testArrayBlankLineBeforeCommentGroup(): void
     {
         $doc = Maml::parseAst("[\n  1\n\n  # section\n  2\n]");
+        $this->assertInstanceOf(ArrayNode::class, $doc->value);
         $els = $doc->value->elements;
         $this->assertTrue($els[1]->emptyLineBefore);
     }
@@ -578,12 +595,14 @@ final class AstParserTest extends TestCase
      */
     private static function loadTestCases(string $filename): array
     {
-        $content = file_get_contents(__DIR__ . '/fixtures/' . $filename);
+        $content = (string) file_get_contents(__DIR__ . '/fixtures/' . $filename);
         $cases = explode('===', $content);
         $result = [];
         foreach ($cases as $case) {
             $case = trim($case);
-            if ($case === '') continue;
+            if ($case === '') {
+                continue;
+            }
             $lines = explode("\n", $case, 2);
             $name = trim($lines[0]);
             [$input, $expected] = explode('---', $lines[1], 2);

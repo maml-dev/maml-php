@@ -4,6 +4,4 @@ declare(strict_types=1);
 
 namespace Maml;
 
-class ParseException extends \Exception
-{
-}
+class ParseException extends \Exception {}

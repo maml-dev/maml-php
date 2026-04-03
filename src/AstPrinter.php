@@ -34,6 +34,9 @@ final class AstPrinter
         return self::doPrint($node, 0);
     }
 
+    /**
+     * @param CommentNode[] $comments
+     */
     private static function printComments(array $comments, string $indent): string
     {
         $out = '';
@@ -78,7 +81,9 @@ final class AstPrinter
 
                 if ($i > 0) {
                     $out .= "\n";
-                    if ($el->emptyLineBefore) $out .= "\n";
+                    if ($el->emptyLineBefore) {
+                        $out .= "\n";
+                    }
                 }
                 $out .= self::printComments($el->leadingComments, $childIndent);
                 $out .= $childIndent . self::doPrint($el->value, $level + 1);
@@ -89,52 +94,56 @@ final class AstPrinter
             }
 
             if (\count($node->danglingComments) > 0) {
-                if ($len > 0) $out .= "\n";
+                if ($len > 0) {
+                    $out .= "\n";
+                }
                 $out .= self::printComments($node->danglingComments, $childIndent);
                 $out = \rtrim($out, "\n");
             }
 
             return $out . "\n" . $parentIndent . ']';
         }
-        if ($node instanceof ObjectNode) {
-            $len = \count($node->properties);
-            $hasComments = \count($node->danglingComments) > 0;
-            if ($len === 0 && !$hasComments) {
-                return '{}';
-            }
-
-            $childIndent = self::getIndent($level + 1);
-            $parentIndent = self::getIndent($level);
-            $out = "{\n";
-
-            for ($i = 0; $i < $len; $i++) {
-                $prop = $node->properties[$i];
-
-                if ($i > 0) {
-                    $out .= "\n";
-                    if ($prop->emptyLineBefore) $out .= "\n";
-                }
-                $out .= self::printComments($prop->leadingComments, $childIndent);
-
-                $keyStr = $prop->key->type === 'Identifier'
-                    ? $prop->key->value
-                    : self::quoteString($prop->key->value);
-                $out .= $childIndent . $keyStr . ': ' . self::doPrint($prop->value, $level + 1);
-
-                if ($prop->trailingComment !== null) {
-                    $out .= ' #' . $prop->trailingComment->value;
-                }
-            }
-
-            if (\count($node->danglingComments) > 0) {
-                if ($len > 0) $out .= "\n";
-                $out .= self::printComments($node->danglingComments, $childIndent);
-                $out = \rtrim($out, "\n");
-            }
-
-            return $out . "\n" . $parentIndent . '}';
+        // $node is ObjectNode at this point (all other types handled above)
+        $len = \count($node->properties);
+        $hasComments = \count($node->danglingComments) > 0;
+        if ($len === 0 && !$hasComments) {
+            return '{}';
         }
-        throw new \InvalidArgumentException('Unknown node type');
+
+        $childIndent = self::getIndent($level + 1);
+        $parentIndent = self::getIndent($level);
+        $out = "{\n";
+
+        for ($i = 0; $i < $len; $i++) {
+            $prop = $node->properties[$i];
+
+            if ($i > 0) {
+                $out .= "\n";
+                if ($prop->emptyLineBefore) {
+                    $out .= "\n";
+                }
+            }
+            $out .= self::printComments($prop->leadingComments, $childIndent);
+
+            $keyStr = $prop->key->type === 'Identifier'
+                ? $prop->key->value
+                : self::quoteString($prop->key->value);
+            $out .= $childIndent . $keyStr . ': ' . self::doPrint($prop->value, $level + 1);
+
+            if ($prop->trailingComment !== null) {
+                $out .= ' #' . $prop->trailingComment->value;
+            }
+        }
+
+        if (\count($node->danglingComments) > 0) {
+            if ($len > 0) {
+                $out .= "\n";
+            }
+            $out .= self::printComments($node->danglingComments, $childIndent);
+            $out = \rtrim($out, "\n");
+        }
+
+        return $out . "\n" . $parentIndent . '}';
     }
 
     private static function quoteString(string $s): string

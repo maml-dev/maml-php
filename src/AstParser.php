@@ -120,7 +120,9 @@ final class AstParser
 
     private function parseString(): ?StringNode
     {
-        if ($this->ch !== '"') return null;
+        if ($this->ch !== '"') {
+            return null;
+        }
         $start = $this->here();
         $str = '';
         $escaped = false;
@@ -142,7 +144,9 @@ final class AstParser
                     $hex = '';
                     while (true) {
                         $this->next();
-                        if ($this->ch === '}') break;
+                        if ($this->ch === '}') {
+                            break;
+                        }
                         if (!$this->isHexDigit($this->ch)) {
                             throw new ParseException(
                                 $this->errorSnippet(
@@ -201,7 +205,9 @@ final class AstParser
 
     private function parseRawString(): ?RawStringNode
     {
-        if ($this->ch !== '"' || $this->lookahead(2) !== '""') return null;
+        if ($this->ch !== '"' || $this->lookahead(2) !== '""') {
+            return null;
+        }
         $start = $this->here();
         $this->next();
         $this->next();
@@ -236,7 +242,9 @@ final class AstParser
 
     private function parseNumber(): IntegerNode|FloatNode|null
     {
-        if (!$this->isDigit($this->ch) && $this->ch !== '-') return null;
+        if (!$this->isDigit($this->ch) && $this->ch !== '-') {
+            return null;
+        }
         $start = $this->here();
         $numStr = '';
         $float = false;
@@ -298,7 +306,9 @@ final class AstParser
 
     private function parseObject(): ?ObjectNode
     {
-        if ($this->ch !== '{') return null;
+        if ($this->ch !== '{') {
+            return null;
+        }
         $start = $this->here();
         $this->next();
         $this->skipWhitespace();
@@ -313,6 +323,9 @@ final class AstParser
             $keyStart = $this->here();
             if ($this->ch === '"') {
                 $key = $this->parseString();
+                if ($key === null) {
+                    throw new ParseException($this->errorSnippet());
+                }
             } else {
                 $key = $this->parseKey();
             }
@@ -372,7 +385,9 @@ final class AstParser
 
     private function parseArray(): ?ArrayNode
     {
-        if ($this->ch !== '[') return null;
+        if ($this->ch !== '[') {
+            return null;
+        }
         $start = $this->here();
         $this->next();
         $this->skipWhitespace();
@@ -411,7 +426,9 @@ final class AstParser
 
     private function parseKeyword(string $name): BooleanNode|NullNode|null
     {
-        if ($this->ch !== $name[0]) return null;
+        if ($this->ch !== $name[0]) {
+            return null;
+        }
         $start = $this->here();
         for ($i = 1; $i < \strlen($name); $i++) {
             $this->next();
@@ -421,11 +438,11 @@ final class AstParser
         }
         $this->next();
         if (
-            $this->isWhitespace($this->ch) ||
-            $this->ch === ',' ||
-            $this->ch === '}' ||
-            $this->ch === ']' ||
-            $this->done
+            $this->isWhitespace($this->ch)
+            || $this->ch === ','
+            || $this->ch === '}'
+            || $this->ch === ']'
+            || $this->done
         ) {
             $end = $this->here();
             $span = new Span($start, $end);
@@ -482,16 +499,18 @@ final class AstParser
 
     private function isKeyChar(string $ch): bool
     {
-        return ($ch >= 'A' && $ch <= 'Z') ||
-            ($ch >= 'a' && $ch <= 'z') ||
-            ($ch >= '0' && $ch <= '9') ||
-            $ch === '_' ||
-            $ch === '-';
+        return ($ch >= 'A' && $ch <= 'Z')
+            || ($ch >= 'a' && $ch <= 'z')
+            || ($ch >= '0' && $ch <= '9')
+            || $ch === '_'
+            || $ch === '-';
     }
 
     private function toSafeNumber(string $str): int|float
     {
-        if ($str === '-0') return -0.0;
+        if ($str === '-0') {
+            return -0.0;
+        }
         $int = (int) $str;
         if ((string) $int === $str) {
             return $int;
@@ -499,6 +518,9 @@ final class AstParser
         throw new ParseException($this->errorSnippet('Integer overflow'));
     }
 
+    /**
+     * @phpstan-assert !null $value
+     */
     private function expectValue(mixed $value): void
     {
         if ($value === null) {
@@ -513,10 +535,12 @@ final class AstParser
 
     private function formatChar(string $ch): string
     {
-        if ($ch === '') return '""';
+        if ($ch === '') {
+            return '""';
+        }
         $ord = \ord($ch);
         if ($ord < 0x80) {
-            return \json_encode($ch, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
+            return (string) \json_encode($ch, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
         }
         $bytePos = $this->pos - 1;
         $byte = \ord($this->source[$bytePos]);
@@ -527,7 +551,7 @@ final class AstParser
             default => 4,
         };
         $fullChar = \substr($this->source, $bytePos, $len);
-        return \json_encode($fullChar, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
+        return (string) \json_encode($fullChar, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
     }
 
     private function errorSnippet(string $message = ''): string
@@ -549,7 +573,7 @@ final class AstParser
         $lines = \explode("\n", $pre);
         $lastLine = \end($lines) ?: '';
         $postParts = \explode("\n", \substr($this->source, $this->pos, 40), 2);
-        $postfix = $postParts[0] ?? '';
+        $postfix = $postParts[0];
 
         if ($lastLine === '') {
             $count = \count($lines);
@@ -571,7 +595,9 @@ final class AstParser
      */
     private static function attachComments(Document $doc, array $comments, string $source): void
     {
-        if (\count($comments) === 0) return;
+        if (\count($comments) === 0) {
+            return;
+        }
 
         $valueStart = $doc->value->span->start->offset;
         $valueEnd = $doc->value->span->end->offset;
@@ -624,22 +650,24 @@ final class AstParser
             $nested = false;
             foreach ($props as $prop) {
                 if (
-                    $c->span->start->offset >= $prop->value->span->start->offset &&
-                    $c->span->start->offset < $prop->value->span->end->offset
+                    $c->span->start->offset >= $prop->value->span->start->offset
+                    && $c->span->start->offset < $prop->value->span->end->offset
                 ) {
                     self::distributeComments($prop->value, [$c], $source);
                     $nested = true;
                     break;
                 }
             }
-            if ($nested) continue;
+            if ($nested) {
+                continue;
+            }
 
             // Try to attach as trailing comment (on same line as a property's value)
             $attached = false;
             foreach ($props as $prop) {
                 if (
-                    $c->span->start->offset > $prop->value->span->end->offset &&
-                    !self::hasNewlineBetween(
+                    $c->span->start->offset > $prop->value->span->end->offset
+                    && !self::hasNewlineBetween(
                         $source,
                         $prop->value->span->start->offset,
                         $c->span->start->offset,
@@ -650,7 +678,9 @@ final class AstParser
                     break;
                 }
             }
-            if ($attached) continue;
+            if ($attached) {
+                continue;
+            }
 
             // Try to attach as leading comment (before a property's key)
             foreach ($props as $prop) {
@@ -660,7 +690,9 @@ final class AstParser
                     break;
                 }
             }
-            if ($attached) continue;
+            if ($attached) {
+                continue;
+            }
 
             // Dangling comment (after last property, before closing brace)
             $node->danglingComments[] = $c;
@@ -684,22 +716,24 @@ final class AstParser
             $nested = false;
             foreach ($elements as $el) {
                 if (
-                    $c->span->start->offset >= $el->value->span->start->offset &&
-                    $c->span->start->offset < $el->value->span->end->offset
+                    $c->span->start->offset >= $el->value->span->start->offset
+                    && $c->span->start->offset < $el->value->span->end->offset
                 ) {
                     self::distributeComments($el->value, [$c], $source);
                     $nested = true;
                     break;
                 }
             }
-            if ($nested) continue;
+            if ($nested) {
+                continue;
+            }
 
             // Try to attach as trailing comment (on same line as element's value)
             $attached = false;
             foreach ($elements as $el) {
                 if (
-                    $c->span->start->offset > $el->value->span->end->offset &&
-                    !self::hasNewlineBetween(
+                    $c->span->start->offset > $el->value->span->end->offset
+                    && !self::hasNewlineBetween(
                         $source,
                         $el->value->span->start->offset,
                         $c->span->start->offset,
@@ -710,7 +744,9 @@ final class AstParser
                     break;
                 }
             }
-            if ($attached) continue;
+            if ($attached) {
+                continue;
+            }
 
             // Try to attach as leading comment (before next element)
             foreach ($elements as $el) {
@@ -720,7 +756,9 @@ final class AstParser
                     break;
                 }
             }
-            if ($attached) continue;
+            if ($attached) {
+                continue;
+            }
 
             // Dangling comment (after last element, before closing bracket)
             $node->danglingComments[] = $c;
@@ -771,7 +809,9 @@ final class AstParser
     private static function hasNewlineBetween(string $source, int $from, int $to): bool
     {
         for ($i = $from; $i < $to; $i++) {
-            if ($source[$i] === "\n") return true;
+            if ($source[$i] === "\n") {
+                return true;
+            }
         }
         return false;
     }
@@ -781,7 +821,9 @@ final class AstParser
         $afterNewline = false;
         for ($i = $from; $i < $to; $i++) {
             if ($source[$i] === "\n") {
-                if ($afterNewline) return true;
+                if ($afterNewline) {
+                    return true;
+                }
                 $afterNewline = true;
             } elseif ($source[$i] !== ' ' && $source[$i] !== "\t" && $source[$i] !== "\r") {
                 $afterNewline = false;
