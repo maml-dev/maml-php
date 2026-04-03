@@ -89,34 +89,6 @@ Maml::errorSnippet($source, $node->span->start, 'Port out of range');
 //     ........^
 ```
 
-## Node Types
-
-| Node       | `type`         | `value`  | `raw` |
-|------------|----------------|----------|-------|
-| String     | `"String"`     | `string` | yes   |
-| Raw String | `"RawString"`  | `string` | yes   |
-| Integer    | `"Integer"`    | `int`    | yes   |
-| Float      | `"Float"`      | `float`  | yes   |
-| Boolean    | `"Boolean"`    | `bool`   | --    |
-| Null       | `"Null"`       | `null`   | --    |
-| Object     | `"Object"`     | `properties: Property[]` | -- |
-| Array      | `"Array"`      | `elements: Element[]`    | -- |
-
-Object keys are either `IdentifierKey` for bare keys like `host`, or `StringNode` for quoted keys like `"host name"`.
-
-### Comments
-
-Comments are attached to the nearest node:
-
-- **`Property.leadingComments`** / **`Element.leadingComments`** -- comments on lines before
-- **`Property.trailingComment`** / **`Element.trailingComment`** -- comment on the same line after
-- **`ObjectNode.danglingComments`** / **`ArrayNode.danglingComments`** -- comments inside empty containers or after the last entry
-- **`Document.leadingComments`** / **`Document.danglingComments`** -- comments before/after the root value
-
-### Blank lines
-
-`Property.emptyLineBefore` and `Element.emptyLineBefore` are `true` when there is a blank line separating from the previous entry.
-
 ## License
 
 [MIT](LICENSE)
