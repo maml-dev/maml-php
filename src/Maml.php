@@ -15,6 +15,9 @@ use Maml\Ast\ObjectNode;
 use Maml\Ast\Position;
 use Maml\Ast\RawStringNode;
 use Maml\Ast\StringNode;
+use Maml\Schema\SchemaType;
+use Maml\Schema\ValidationError;
+use Maml\Schema\Validator;
 
 final class Maml
 {
@@ -31,6 +34,14 @@ final class Maml
     public static function parseAst(string $source): Document
     {
         return AstParser::parse($source);
+    }
+
+    /**
+     * @return ValidationError[]
+     */
+    public static function validate(Document $doc, SchemaType $schema): array
+    {
+        return Validator::validate($doc, $schema);
     }
 
     public static function printAst(
