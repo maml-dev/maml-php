@@ -58,15 +58,15 @@ final class S
     }
 
     /** @param array<string, SchemaType> $properties */
-    public static function object(array $properties): ObjectType
+    public static function object(array $properties, ?SchemaType $additionalProperties = null): ObjectType
     {
-        return new ObjectType($properties);
+        return new ObjectType($properties, $additionalProperties);
     }
 
     /** @param array<string, SchemaType> $properties */
-    public static function orderedObject(array $properties): OrderedObjectType
+    public static function orderedObject(array $properties, ?SchemaType $additionalProperties = null): OrderedObjectType
     {
-        return new OrderedObjectType($properties);
+        return new OrderedObjectType($properties, $additionalProperties);
     }
 
     public static function optional(SchemaType $schema): OptionalType

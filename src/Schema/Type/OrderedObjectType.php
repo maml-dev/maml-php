@@ -8,9 +8,12 @@ use Maml\Schema\SchemaType;
 
 readonly class OrderedObjectType implements SchemaType
 {
-    /** @param array<string, SchemaType> $properties */
+    /**
+     * @param array<string, SchemaType> $properties
+     */
     public function __construct(
         public array $properties,
+        public ?SchemaType $additionalProperties = null,
     ) {}
 
     public function describe(): string

@@ -283,6 +283,63 @@ final class ValidatorTest extends TestCase
         $this->assertContains('Missing required property "port"', $messages);
     }
 
+    // ---- Object with additionalProperties ----
+
+    public function testObjectAdditionalPropertiesAllowed(): void
+    {
+        $this->assertValid(
+            '{host: "localhost", port: 5432, extra: true}',
+            S::object(['host' => S::string(), 'port' => S::integer()], S::any()),
+        );
+    }
+
+    public function testObjectAdditionalPropertiesTyped(): void
+    {
+        $this->assertValid(
+            '{host: "localhost", FOO: "bar", BAZ: "qux"}',
+            S::object(['host' => S::string()], S::string()),
+        );
+    }
+
+    public function testObjectAdditionalPropertiesTypedRejectsWrongType(): void
+    {
+        $errors = $this->validate(
+            '{host: "localhost", count: 42}',
+            S::object(['host' => S::string()], S::string()),
+        );
+        $this->assertCount(1, $errors);
+        $this->assertSame('Expected string, got integer', $errors[0]->message);
+        $this->assertSame('$.count', $errors[0]->path);
+    }
+
+    public function testObjectAdditionalPropertiesStillValidatesKnown(): void
+    {
+        $errors = $this->validate(
+            '{host: 42, extra: "ok"}',
+            S::object(['host' => S::string()], S::any()),
+        );
+        $this->assertCount(1, $errors);
+        $this->assertSame('Expected string, got integer', $errors[0]->message);
+        $this->assertSame('$.host', $errors[0]->path);
+    }
+
+    public function testObjectAdditionalPropertiesHostsExample(): void
+    {
+        $schema = S::map(S::union(
+            S::object(['local' => S::optional(S::boolean())], S::any()),
+            S::null(),
+        ));
+        $this->assertValid('{prod: {local: false, deploy_path: "/var/www"}, staging: null}', $schema);
+    }
+
+    public function testOrderedObjectAdditionalProperties(): void
+    {
+        $this->assertValid(
+            '{a: 1, b: 2, extra: "ok"}',
+            S::orderedObject(['a' => S::integer(), 'b' => S::integer()], S::any()),
+        );
+    }
+
     // ---- Ordered object ----
 
     public function testOrderedObjectValidOrder(): void

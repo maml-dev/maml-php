@@ -108,12 +108,12 @@ final class Validator
         }
 
         if ($schema instanceof ObjectType) {
-            $this->validateObject($node, $schema->properties, $path);
+            $this->validateObject($node, $schema->properties, $schema->additionalProperties, $path);
             return;
         }
 
         if ($schema instanceof OrderedObjectType) {
-            $this->validateObject($node, $schema->properties, $path);
+            $this->validateObject($node, $schema->properties, $schema->additionalProperties, $path);
             if ($node instanceof ObjectNode) {
                 $this->validateOrder($node, $schema->properties, $path);
             }
@@ -219,6 +219,7 @@ final class Validator
     private function validateObject(
         StringNode|RawStringNode|IntegerNode|FloatNode|BooleanNode|NullNode|ObjectNode|ArrayNode $node,
         array $properties,
+        ?SchemaType $additionalProperties,
         string $path,
     ): void {
         if (!($node instanceof ObjectNode)) {
@@ -233,10 +234,14 @@ final class Validator
             $actual[$prop->key->value] = $prop;
         }
 
-        // Unknown keys
+        // Unknown keys: reject or validate against additionalProperties schema
         foreach ($actual as $key => $prop) {
             if (!isset($properties[$key])) {
-                $this->addError('Unknown property "' . $key . '"', $path . '.' . $key, $prop->key->span->start);
+                if ($additionalProperties === null) {
+                    $this->addError('Unknown property "' . $key . '"', $path . '.' . $key, $prop->key->span->start);
+                } else {
+                    $this->validateNode($prop->value, $additionalProperties, $path . '.' . $key);
+                }
             }
         }
 
