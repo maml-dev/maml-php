@@ -63,6 +63,14 @@ final class Validator
         if ($schema instanceof StringType) {
             if (!($node instanceof StringNode) && !($node instanceof RawStringNode)) {
                 $this->addError('Expected string, got ' . self::describeNode($node), $path, $node->span);
+                return;
+            }
+            if ($schema->pattern !== null && !\preg_match($schema->pattern, $node->value)) {
+                $this->addError(
+                    'String does not match pattern ' . $schema->pattern,
+                    $path,
+                    $node->span,
+                );
             }
             return;
         }
@@ -70,21 +78,27 @@ final class Validator
         if ($schema instanceof IntegerType) {
             if (!($node instanceof IntegerNode)) {
                 $this->addError('Expected integer, got ' . self::describeNode($node), $path, $node->span);
+                return;
             }
+            $this->checkRange($node->value, $schema->min, $schema->max, $path, $node->span);
             return;
         }
 
         if ($schema instanceof FloatType) {
             if (!($node instanceof FloatNode)) {
                 $this->addError('Expected float, got ' . self::describeNode($node), $path, $node->span);
+                return;
             }
+            $this->checkRange($node->value, $schema->min, $schema->max, $path, $node->span);
             return;
         }
 
         if ($schema instanceof NumberType) {
             if (!($node instanceof IntegerNode) && !($node instanceof FloatNode)) {
                 $this->addError('Expected number, got ' . self::describeNode($node), $path, $node->span);
+                return;
             }
+            $this->checkRange($node->value, $schema->min, $schema->max, $path, $node->span);
             return;
         }
 
@@ -135,6 +149,21 @@ final class Validator
             if (!($node instanceof ArrayNode)) {
                 $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNode($node), $path, $node->span);
                 return;
+            }
+            $count = \count($node->elements);
+            if ($schema->minItems !== null && $count < $schema->minItems) {
+                $this->addError(
+                    'Expected at least ' . $schema->minItems . ' items, got ' . $count,
+                    $path,
+                    $node->span,
+                );
+            }
+            if ($schema->maxItems !== null && $count > $schema->maxItems) {
+                $this->addError(
+                    'Expected at most ' . $schema->maxItems . ' items, got ' . $count,
+                    $path,
+                    $node->span,
+                );
             }
             foreach ($node->elements as $i => $element) {
                 $this->validateNode($element->value, $schema->items, $path . '[' . $i . ']');
@@ -328,6 +357,16 @@ final class Validator
                 $path,
                 $node->span,
             );
+        }
+    }
+
+    private function checkRange(int|float $value, int|float|null $min, int|float|null $max, string $path, Span $span): void
+    {
+        if ($min !== null && $value < $min) {
+            $this->addError('Value ' . $value . ' is less than minimum ' . $min, $path, $span);
+        }
+        if ($max !== null && $value > $max) {
+            $this->addError('Value ' . $value . ' is greater than maximum ' . $max, $path, $span);
         }
     }
 

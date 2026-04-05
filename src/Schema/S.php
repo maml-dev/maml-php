@@ -22,24 +22,24 @@ use Maml\Schema\Type\UnionType;
 
 final class S
 {
-    public static function string(): StringType
+    public static function string(?string $pattern = null): StringType
     {
-        return new StringType();
+        return new StringType($pattern);
     }
 
-    public static function integer(): IntegerType
+    public static function integer(?int $min = null, ?int $max = null): IntegerType
     {
-        return new IntegerType();
+        return new IntegerType($min, $max);
     }
 
-    public static function float(): FloatType
+    public static function float(?float $min = null, ?float $max = null): FloatType
     {
-        return new FloatType();
+        return new FloatType($min, $max);
     }
 
-    public static function number(): NumberType
+    public static function number(int|float|null $min = null, int|float|null $max = null): NumberType
     {
-        return new NumberType();
+        return new NumberType($min, $max);
     }
 
     public static function boolean(): BooleanType
@@ -74,9 +74,9 @@ final class S
         return new OptionalType($schema);
     }
 
-    public static function arrayOf(SchemaType $items): ArrayOfType
+    public static function arrayOf(SchemaType $items, ?int $minItems = null, ?int $maxItems = null): ArrayOfType
     {
-        return new ArrayOfType($items);
+        return new ArrayOfType($items, $minItems, $maxItems);
     }
 
     /** @param SchemaType[] $elements */
