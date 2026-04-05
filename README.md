@@ -79,16 +79,30 @@ Maml::toValue($doc); // ["host" => "localhost", "port" => 5432]
 
 ### Error snippets
 
-Point at any AST node in source for user-friendly error messages:
+Point at any AST node in source for user-friendly error messages. Accepts `Position` (single `^`) or `Span` (underline `^^^^`):
 
 ```php
 $node = $doc->value->properties[1]->value;
-Maml::errorSnippet($source, $node->span->start, 'Port out of range');
+Maml::errorSnippet($source, $node->span, 'Port out of range');
 // Port out of range on line 4.
 //
 //       port: 5432
-//     ........^
+//             ^^^^
 ```
+
+Show context lines and Rust-style gutter with line numbers:
+
+```php
+Maml::errorSnippet($source, $node->span, 'Port out of range', context: 2, gutter: true);
+// Port out of range on line 4.
+//
+//     2 |   host: "localhost"
+//     3 |   port: 5432
+//     4 |   timeout: -1
+//       |            ^^
+```
+
+Options: `context` (lines above), `indent` (default `'    '`), `gutter` (line numbers).
 
 ## Schema Validation
 

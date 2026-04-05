@@ -88,6 +88,8 @@ final class Maml
         Position|Span $location,
         string $message,
         int $context = 0,
+        string $indent = '    ',
+        bool $gutter = false,
     ): string {
         $start = $location instanceof Span ? $location->start : $location;
         $lineNum = $start->line;
@@ -116,8 +118,10 @@ final class Maml
         // Collect lines to display (context + error line)
         $firstIndex = \max(0, $lineIndex - $context);
         $lines = [];
+        $lineNums = [];
         for ($i = $firstIndex; $i <= $lineIndex; $i++) {
             $lines[] = $sourceLines[$i] ?? '';
+            $lineNums[] = $i + 1;
         }
 
         // Truncation (work in character space)
@@ -154,12 +158,22 @@ final class Maml
         }
 
         // Build output
-        $indent = '    ';
         $out = "{$message} on line {$lineNum}.\n\n";
-        foreach ($lines as $line) {
-            $out .= $indent . $line . "\n";
+
+        if ($gutter) {
+            $gutterWidth = \strlen((string) $lineNum);
+            $pad = \str_repeat(' ', $gutterWidth);
+            foreach ($lines as $i => $line) {
+                $num = \str_pad((string) $lineNums[$i], $gutterWidth, ' ', \STR_PAD_LEFT);
+                $out .= $indent . $num . ' | ' . $line . "\n";
+            }
+            $out .= $indent . $pad . ' | ' . \str_repeat(' ', $adjustedCol) . \str_repeat('^', $width) . "\n";
+        } else {
+            foreach ($lines as $line) {
+                $out .= $indent . $line . "\n";
+            }
+            $out .= $indent . \str_repeat(' ', $adjustedCol) . \str_repeat('^', $width) . "\n";
         }
-        $out .= $indent . \str_repeat(' ', $adjustedCol) . \str_repeat('^', $width) . "\n";
 
         return $out;
     }

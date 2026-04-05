@@ -342,6 +342,86 @@ final class ErrorSnippetTest extends TestCase
         $this->assertSame("Err on line 1.\n\n    only\n    ^\n", $result);
     }
 
+    // ---- Custom indent ----
+
+    public function testCustomIndentTwoSpaces(): void
+    {
+        $result = Maml::errorSnippet('null', new Position(0, 1, 1), 'Err', indent: '  ');
+        $this->assertSame("Err on line 1.\n\n  null\n  ^\n", $result);
+    }
+
+    public function testCustomIndentEmpty(): void
+    {
+        $result = Maml::errorSnippet('null', new Position(0, 1, 1), 'Err', indent: '');
+        $this->assertSame("Err on line 1.\n\nnull\n^\n", $result);
+    }
+
+    public function testCustomIndentTab(): void
+    {
+        $result = Maml::errorSnippet('null', new Position(0, 1, 1), 'Err', indent: "\t");
+        $this->assertSame("Err on line 1.\n\n\tnull\n\t^\n", $result);
+    }
+
+    // ---- Gutter mode ----
+
+    public function testGutterBasic(): void
+    {
+        $result = Maml::errorSnippet('hello', new Position(0, 1, 1), 'Err', gutter: true);
+        $this->assertSame("Err on line 1.\n\n    1 | hello\n      | ^\n", $result);
+    }
+
+    public function testGutterWithSpan(): void
+    {
+        $source = '{port: "bad"}';
+        $doc = Maml::parseAst($source);
+        $this->assertInstanceOf(ObjectNode::class, $doc->value);
+        $val = $doc->value->properties[0]->value;
+
+        $result = Maml::errorSnippet($source, $val->span, 'Wrong', gutter: true);
+        $this->assertSame(
+            "Wrong on line 1.\n\n    1 | {port: \"bad\"}\n      |        ^^^^^\n",
+            $result,
+        );
+    }
+
+    public function testGutterWithContext(): void
+    {
+        $source = "{\n  a: 1\n  b: \"bad\"\n}";
+        $doc = Maml::parseAst($source);
+        $this->assertInstanceOf(ObjectNode::class, $doc->value);
+        $val = $doc->value->properties[1]->value;
+
+        $result = Maml::errorSnippet($source, $val->span, 'Wrong', context: 1, gutter: true);
+        $this->assertSame(
+            "Wrong on line 3.\n\n    2 |   a: 1\n    3 |   b: \"bad\"\n      |      ^^^^^\n",
+            $result,
+        );
+    }
+
+    public function testGutterPadsLineNumbers(): void
+    {
+        // Build source with 100 lines, error on line 100
+        $lines = [];
+        for ($i = 1; $i <= 100; $i++) {
+            $lines[] = "line{$i}";
+        }
+        $source = \implode("\n", $lines);
+        $offset = \strlen($source) - 7; // "line100" starts here
+        $pos = new Position($offset, 100, 1);
+
+        $result = Maml::errorSnippet($source, $pos, 'Err', context: 1, gutter: true);
+        // 3-digit line numbers: " 99 | " and "100 | "
+        $this->assertStringContainsString(' 99 | line99', $result);
+        $this->assertStringContainsString('100 | line100', $result);
+        $this->assertStringContainsString('    | ^', $result);
+    }
+
+    public function testGutterWithCustomIndent(): void
+    {
+        $result = Maml::errorSnippet('hello', new Position(0, 1, 1), 'Err', indent: '', gutter: true);
+        $this->assertSame("Err on line 1.\n\n1 | hello\n  | ^\n", $result);
+    }
+
     // ---- Integration with validator errors ----
 
     public function testValidationErrorWithSnippet(): void
