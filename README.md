@@ -113,45 +113,52 @@ use Maml\Schema\S;
 
 $schema = S::object([
     'host' => S::string(),
-    'port' => S::integer(),
-    'tags' => S::arrayOf(S::string()),
+    'port' => S::integer(min: 1, max: 65535),
+    'tags' => S::arrayOf(S::string(), minItems: 1),
     'ssl' => S::optional(S::boolean()),
     'mode' => S::enum('fast', 'safe', 'auto'),
+    'version' => S::optional(S::string(pattern: '/^\d+\.\d+\.\d+$/')),
 ]);
 
 $doc = Maml::parseAst($source);
 $errors = Maml::validate($doc, $schema);
 
 foreach ($errors as $error) {
-    // $error->message  "Missing required property "host""
-    // $error->path     "$.host"
-    // $error->position Position(line: 1, column: 1)
-    echo Maml::errorSnippet($source, $error->position, $error->message);
+    // $error->message  "Expected integer, got string"
+    // $error->path     "$.port"
+    // $error->span     Span(start: Position(line: 3, ...), end: ...)
+    echo Maml::errorSnippet($source, $error->span, $error->message);
 }
 ```
 
 ### Available schema types
 
-| Builder                         | Matches                                            |
-|---------------------------------|----------------------------------------------------|
-| `S::string()`                   | String or raw string                               |
-| `S::integer()`                  | Integer                                            |
-| `S::float()`                    | Float                                              |
-| `S::number()`                   | Integer or float                                   |
-| `S::boolean()`                  | Boolean                                            |
-| `S::null()`                     | Null                                               |
-| `S::any()`                      | Anything                                           |
-| `S::literal('x')`               | Exact value                                        |
-| `S::enum('a', 'b')`             | One of the listed values                           |
-| `S::object([...])`              | Object with typed properties, rejects unknown keys |
-| `S::object([...], S::any())`    | Same, but allows extra keys                        |
-| `S::object([...], S::string())` | Same, extra keys must match schema                 |
-| `S::orderedObject([...])`       | Object with properties in order                    |
-| `S::map(schema)`                | Object with any keys, typed values                 |
-| `S::optional(schema)`           | Property may be absent                             |
-| `S::arrayOf(schema)`            | Array of uniform type                              |
-| `S::tuple([s1, s2])`            | Fixed-length array                                 |
-| `S::union(s1, s2)`              | One of several schemas                             |
+| Builder                            | Matches                                            |
+|------------------------------------|----------------------------------------------------|
+| `S::string()`                      | String or raw string                               |
+| `S::string(pattern: '/.../')`      | String matching regex                              |
+| `S::integer()`                     | Integer                                            |
+| `S::integer(min: 0, max: 100)`     | Integer within range                               |
+| `S::float()`                       | Float                                              |
+| `S::float(min: 0.0, max: 1.0)`     | Float within range                                 |
+| `S::number()`                      | Integer or float                                   |
+| `S::number(min: 0)`                | Number with minimum                                |
+| `S::boolean()`                     | Boolean                                            |
+| `S::null()`                        | Null                                               |
+| `S::any()`                         | Anything                                           |
+| `S::literal('x')`                  | Exact value                                        |
+| `S::enum('a', 'b')`                | One of the listed values                           |
+| `S::object([...])`                 | Object with typed properties, rejects unknown keys |
+| `S::object([...], S::any())`       | Same, but allows extra keys                        |
+| `S::object([...], S::string())`    | Same, extra keys must match schema                 |
+| `S::orderedObject([...])`          | Object with properties in order                    |
+| `S::map(schema)`                   | Object with any keys, typed values                 |
+| `S::optional(schema)`              | Property may be absent                             |
+| `S::arrayOf(schema)`               | Array of uniform type                              |
+| `S::arrayOf(schema, minItems: 1)`  | Array with minimum length                          |
+| `S::arrayOf(schema, maxItems: 10)` | Array with maximum length                          |
+| `S::tuple([s1, s2])`               | Fixed-length array                                 |
+| `S::union(s1, s2)`                 | One of several schemas                             |
 
 ## License
 
