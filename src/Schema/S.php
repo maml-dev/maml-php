@@ -10,6 +10,7 @@ use Maml\Schema\Type\BooleanType;
 use Maml\Schema\Type\FloatType;
 use Maml\Schema\Type\IntegerType;
 use Maml\Schema\Type\LiteralType;
+use Maml\Schema\Type\MapType;
 use Maml\Schema\Type\NullType;
 use Maml\Schema\Type\NumberType;
 use Maml\Schema\Type\ObjectType;
@@ -82,6 +83,11 @@ final class S
     public static function tuple(array $elements): TupleType
     {
         return new TupleType($elements);
+    }
+
+    public static function map(SchemaType $values): MapType
+    {
+        return new MapType($values);
     }
 
     public static function union(SchemaType ...$branches): UnionType

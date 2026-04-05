@@ -118,23 +118,24 @@ foreach ($errors as $error) {
 
 ### Available schema types
 
-| Builder | Matches |
-|---------|---------|
-| `S::string()` | String or raw string |
-| `S::integer()` | Integer |
-| `S::float()` | Float |
-| `S::number()` | Integer or float |
-| `S::boolean()` | Boolean |
-| `S::null()` | Null |
-| `S::any()` | Anything |
-| `S::literal('x')` | Exact value |
-| `S::enum('a', 'b')` | One of the listed values |
-| `S::object([...])` | Object with typed properties |
-| `S::orderedObject([...])` | Object with properties in order |
-| `S::optional(schema)` | Property may be absent |
-| `S::arrayOf(schema)` | Array of uniform type |
-| `S::tuple([s1, s2])` | Fixed-length array |
-| `S::union(s1, s2)` | One of several schemas |
+| Builder                   | Matches                            |
+|---------------------------|------------------------------------|
+| `S::string()`             | String or raw string               |
+| `S::integer()`            | Integer                            |
+| `S::float()`              | Float                              |
+| `S::number()`             | Integer or float                   |
+| `S::boolean()`            | Boolean                            |
+| `S::null()`               | Null                               |
+| `S::any()`                | Anything                           |
+| `S::literal('x')`         | Exact value                        |
+| `S::enum('a', 'b')`       | One of the listed values           |
+| `S::object([...])`        | Object with typed properties       |
+| `S::orderedObject([...])` | Object with properties in order    |
+| `S::map(schema)`          | Object with any keys, typed values |
+| `S::optional(schema)`     | Property may be absent             |
+| `S::arrayOf(schema)`      | Array of uniform type              |
+| `S::tuple([s1, s2])`      | Fixed-length array                 |
+| `S::union(s1, s2)`        | One of several schemas             |
 
 ## License
 

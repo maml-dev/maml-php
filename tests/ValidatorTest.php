@@ -330,6 +330,53 @@ final class ValidatorTest extends TestCase
         $this->assertStringContainsString('not in the expected order', $errors[0]->message);
     }
 
+    // ---- Map ----
+
+    public function testMapValid(): void
+    {
+        $this->assertValid(
+            '{HOME: "/home/user", PATH: "/usr/bin"}',
+            S::map(S::string()),
+        );
+    }
+
+    public function testMapEmpty(): void
+    {
+        $this->assertValid('{}', S::map(S::string()));
+    }
+
+    public function testMapWrongValueType(): void
+    {
+        $errors = $this->validate(
+            '{HOST: "localhost", PORT: 5432}',
+            S::map(S::string()),
+        );
+        $this->assertCount(1, $errors);
+        $this->assertSame('Expected string, got integer', $errors[0]->message);
+        $this->assertSame('$.PORT', $errors[0]->path);
+    }
+
+    public function testMapNotAnObject(): void
+    {
+        $errors = $this->validate('[1, 2]', S::map(S::integer()));
+        $this->assertCount(1, $errors);
+        $this->assertSame('Expected map<integer>, got array', $errors[0]->message);
+    }
+
+    public function testMapInsideObject(): void
+    {
+        $schema = S::object([
+            'run' => S::string(),
+            'env' => S::optional(S::map(S::string())),
+        ]);
+        $this->assertValid('{run: "echo hi", env: {FOO: "bar", BAZ: "qux"}}', $schema);
+        $this->assertValid('{run: "echo hi"}', $schema);
+
+        $errors = $this->validate('{run: "echo hi", env: {FOO: 42}}', $schema);
+        $this->assertCount(1, $errors);
+        $this->assertSame('$.env.FOO', $errors[0]->path);
+    }
+
     // ---- ArrayOf ----
 
     public function testArrayOfValid(): void
@@ -591,6 +638,7 @@ final class ValidatorTest extends TestCase
         $this->assertSame('string | integer', S::union(S::string(), S::integer())->describe());
         $this->assertSame('object{a, b}', S::object(['a' => S::string(), 'b' => S::integer()])->describe());
         $this->assertSame('ordered object{a, b}', S::orderedObject(['a' => S::string(), 'b' => S::integer()])->describe());
+        $this->assertSame('map<string>', S::map(S::string())->describe());
     }
 
     // ---- Helpers ----

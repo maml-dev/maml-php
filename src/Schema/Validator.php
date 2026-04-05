@@ -22,6 +22,7 @@ use Maml\Schema\Type\IntegerType;
 use Maml\Schema\Type\LiteralType;
 use Maml\Schema\Type\NullType;
 use Maml\Schema\Type\NumberType;
+use Maml\Schema\Type\MapType;
 use Maml\Schema\Type\ObjectType;
 use Maml\Schema\Type\OptionalType;
 use Maml\Schema\Type\OrderedObjectType;
@@ -115,6 +116,17 @@ final class Validator
             $this->validateObject($node, $schema->properties, $path);
             if ($node instanceof ObjectNode) {
                 $this->validateOrder($node, $schema->properties, $path);
+            }
+            return;
+        }
+
+        if ($schema instanceof MapType) {
+            if (!($node instanceof ObjectNode)) {
+                $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNode($node), $path, $node->span->start);
+                return;
+            }
+            foreach ($node->properties as $prop) {
+                $this->validateNode($prop->value, $schema->values, $path . '.' . $prop->key->value);
             }
             return;
         }
