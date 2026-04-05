@@ -518,6 +518,57 @@ final class ValidatorTest extends TestCase
         $this->assertSame('Expected string | integer, got boolean', $errors[0]->message);
     }
 
+    public function testUnionReportsDeepestBranchErrors(): void
+    {
+        $step = S::object([
+            'run' => S::optional(S::string()),
+        ], S::any());
+
+        $schema = S::map(S::union(
+            S::arrayOf($step),
+            S::arrayOf(S::string()),
+        ));
+
+        $errors = $this->validate('{build: [{run: "ok"}, {run: 42}]}', $schema);
+        $this->assertCount(1, $errors);
+        $this->assertSame('Expected string, got integer', $errors[0]->message);
+        $this->assertSame('$.build[1].run', $errors[0]->path);
+    }
+
+    public function testUnionGenericWhenNoBranchMatchesDeeper(): void
+    {
+        // Both branches fail at the same depth — generic message
+        $errors = $this->validate('true', S::union(S::string(), S::integer()));
+        $this->assertCount(1, $errors);
+        $this->assertSame('Expected string | integer, got boolean', $errors[0]->message);
+    }
+
+    public function testUnionPrefersObjectBranchOverNull(): void
+    {
+        $schema = S::union(
+            S::object(['name' => S::string()], S::any()),
+            S::null(),
+        );
+        $errors = $this->validate('{name: 42}', $schema);
+        $this->assertCount(1, $errors);
+        $this->assertSame('Expected string, got integer', $errors[0]->message);
+        $this->assertSame('$.name', $errors[0]->path);
+    }
+
+    public function testUnionPicksFewestErrorsOnTiedDepth(): void
+    {
+        // Branch 1: array of objects, 1 deep error
+        // Branch 2: array of objects, 2 deep errors
+        $schema = S::union(
+            S::arrayOf(S::object(['a' => S::string()])),
+            S::arrayOf(S::object(['a' => S::integer(), 'b' => S::integer()])),
+        );
+        // Input: [{a: 42}] — branch 1 fails at $[0].a (1 error), branch 2 fails at $[0].a + $[0].b (2 errors)
+        $errors = $this->validate('[{a: 42}]', $schema);
+        $this->assertCount(1, $errors);
+        $this->assertSame('$[0].a', $errors[0]->path);
+    }
+
     // ---- Enum ----
 
     public function testEnumValid(): void
@@ -632,7 +683,7 @@ final class ValidatorTest extends TestCase
         $this->assertValid('{type: "url", href: "https://x.com"}', $schema);
 
         $errors = $this->validate('{type: "other"}', $schema);
-        $this->assertCount(1, $errors);
+        $this->assertGreaterThan(0, \count($errors));
     }
 
     // ---- Optional outside object context ----

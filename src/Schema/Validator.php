@@ -293,18 +293,42 @@ final class Validator
         UnionType $schema,
         string $path,
     ): void {
+        $bestErrors = null;
+        $bestDepth = -1;
+        $bestCount = \PHP_INT_MAX;
+
         foreach ($schema->branches as $branch) {
             $sub = new self();
             $sub->validateNode($node, $branch, $path);
             if ($sub->errors === []) {
                 return;
             }
+
+            $maxDepth = 0;
+            foreach ($sub->errors as $e) {
+                $depth = \substr_count($e->path, '.') + \substr_count($e->path, '[');
+                $maxDepth = \max($maxDepth, $depth);
+            }
+            $count = \count($sub->errors);
+
+            if ($maxDepth > $bestDepth || ($maxDepth === $bestDepth && $count < $bestCount)) {
+                $bestErrors = $sub->errors;
+                $bestDepth = $maxDepth;
+                $bestCount = $count;
+            }
         }
-        $this->addError(
-            'Expected ' . $schema->describe() . ', got ' . self::describeNode($node),
-            $path,
-            $node->span,
-        );
+
+        // If best branch matched deeper than the union's own path, report its specific errors
+        $unionDepth = \substr_count($path, '.') + \substr_count($path, '[');
+        if ($bestErrors !== null && $bestDepth > $unionDepth) {
+            \array_push($this->errors, ...$bestErrors);
+        } else {
+            $this->addError(
+                'Expected ' . $schema->describe() . ', got ' . self::describeNode($node),
+                $path,
+                $node->span,
+            );
+        }
     }
 
     private function addError(string $message, string $path, ?Span $span): void
