@@ -11,8 +11,8 @@ use Maml\Ast\FloatNode;
 use Maml\Ast\IntegerNode;
 use Maml\Ast\NullNode;
 use Maml\Ast\ObjectNode;
-use Maml\Ast\Position;
 use Maml\Ast\RawStringNode;
+use Maml\Ast\Span;
 use Maml\Ast\StringNode;
 use Maml\Schema\Type\AnyType;
 use Maml\Schema\Type\ArrayOfType;
@@ -20,9 +20,9 @@ use Maml\Schema\Type\BooleanType;
 use Maml\Schema\Type\FloatType;
 use Maml\Schema\Type\IntegerType;
 use Maml\Schema\Type\LiteralType;
+use Maml\Schema\Type\MapType;
 use Maml\Schema\Type\NullType;
 use Maml\Schema\Type\NumberType;
-use Maml\Schema\Type\MapType;
 use Maml\Schema\Type\ObjectType;
 use Maml\Schema\Type\OptionalType;
 use Maml\Schema\Type\OrderedObjectType;
@@ -62,42 +62,42 @@ final class Validator
 
         if ($schema instanceof StringType) {
             if (!($node instanceof StringNode) && !($node instanceof RawStringNode)) {
-                $this->addError('Expected string, got ' . self::describeNode($node), $path, $node->span->start);
+                $this->addError('Expected string, got ' . self::describeNode($node), $path, $node->span);
             }
             return;
         }
 
         if ($schema instanceof IntegerType) {
             if (!($node instanceof IntegerNode)) {
-                $this->addError('Expected integer, got ' . self::describeNode($node), $path, $node->span->start);
+                $this->addError('Expected integer, got ' . self::describeNode($node), $path, $node->span);
             }
             return;
         }
 
         if ($schema instanceof FloatType) {
             if (!($node instanceof FloatNode)) {
-                $this->addError('Expected float, got ' . self::describeNode($node), $path, $node->span->start);
+                $this->addError('Expected float, got ' . self::describeNode($node), $path, $node->span);
             }
             return;
         }
 
         if ($schema instanceof NumberType) {
             if (!($node instanceof IntegerNode) && !($node instanceof FloatNode)) {
-                $this->addError('Expected number, got ' . self::describeNode($node), $path, $node->span->start);
+                $this->addError('Expected number, got ' . self::describeNode($node), $path, $node->span);
             }
             return;
         }
 
         if ($schema instanceof BooleanType) {
             if (!($node instanceof BooleanNode)) {
-                $this->addError('Expected boolean, got ' . self::describeNode($node), $path, $node->span->start);
+                $this->addError('Expected boolean, got ' . self::describeNode($node), $path, $node->span);
             }
             return;
         }
 
         if ($schema instanceof NullType) {
             if (!($node instanceof NullNode)) {
-                $this->addError('Expected null, got ' . self::describeNode($node), $path, $node->span->start);
+                $this->addError('Expected null, got ' . self::describeNode($node), $path, $node->span);
             }
             return;
         }
@@ -122,7 +122,7 @@ final class Validator
 
         if ($schema instanceof MapType) {
             if (!($node instanceof ObjectNode)) {
-                $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNode($node), $path, $node->span->start);
+                $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNode($node), $path, $node->span);
                 return;
             }
             foreach ($node->properties as $prop) {
@@ -133,7 +133,7 @@ final class Validator
 
         if ($schema instanceof ArrayOfType) {
             if (!($node instanceof ArrayNode)) {
-                $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNode($node), $path, $node->span->start);
+                $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNode($node), $path, $node->span);
                 return;
             }
             foreach ($node->elements as $i => $element) {
@@ -144,7 +144,7 @@ final class Validator
 
         if ($schema instanceof TupleType) {
             if (!($node instanceof ArrayNode)) {
-                $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNode($node), $path, $node->span->start);
+                $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNode($node), $path, $node->span);
                 return;
             }
             $expected = \count($schema->elements);
@@ -153,7 +153,7 @@ final class Validator
                 $this->addError(
                     'Expected array of length ' . $expected . ', got ' . $actual,
                     $path,
-                    $node->span->start,
+                    $node->span,
                 );
             }
             $len = \min($expected, $actual);
@@ -178,14 +178,14 @@ final class Validator
 
         if ($expected === null) {
             if (!($node instanceof NullNode)) {
-                $this->addError('Expected null, got ' . self::describeNode($node), $path, $node->span->start);
+                $this->addError('Expected null, got ' . self::describeNode($node), $path, $node->span);
             }
             return;
         }
 
         if (\is_bool($expected)) {
             if (!($node instanceof BooleanNode) || $node->value !== $expected) {
-                $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNodeValue($node), $path, $node->span->start);
+                $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNodeValue($node), $path, $node->span);
             }
             return;
         }
@@ -194,7 +194,7 @@ final class Validator
             if (($node instanceof StringNode || $node instanceof RawStringNode) && $node->value === $expected) {
                 return;
             }
-            $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNodeValue($node), $path, $node->span->start);
+            $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNodeValue($node), $path, $node->span);
             return;
         }
 
@@ -202,7 +202,7 @@ final class Validator
             if ($node instanceof IntegerNode && $node->value === $expected) {
                 return;
             }
-            $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNodeValue($node), $path, $node->span->start);
+            $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNodeValue($node), $path, $node->span);
             return;
         }
 
@@ -210,7 +210,7 @@ final class Validator
         if ($node instanceof FloatNode && $node->value === $expected) {
             return;
         }
-        $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNodeValue($node), $path, $node->span->start);
+        $this->addError('Expected ' . $schema->describe() . ', got ' . self::describeNodeValue($node), $path, $node->span);
     }
 
     /**
@@ -224,7 +224,7 @@ final class Validator
     ): void {
         if (!($node instanceof ObjectNode)) {
             $desc = 'object{' . \implode(', ', \array_keys($properties)) . '}';
-            $this->addError('Expected ' . $desc . ', got ' . self::describeNode($node), $path, $node->span->start);
+            $this->addError('Expected ' . $desc . ', got ' . self::describeNode($node), $path, $node->span);
             return;
         }
 
@@ -238,7 +238,7 @@ final class Validator
         foreach ($actual as $key => $prop) {
             if (!isset($properties[$key])) {
                 if ($additionalProperties === null) {
-                    $this->addError('Unknown property "' . $key . '"', $path . '.' . $key, $prop->key->span->start);
+                    $this->addError('Unknown property "' . $key . '"', $path . '.' . $key, $prop->key->span);
                 } else {
                     $this->validateNode($prop->value, $additionalProperties, $path . '.' . $key);
                 }
@@ -253,7 +253,7 @@ final class Validator
             if (isset($actual[$key])) {
                 $this->validateNode($actual[$key]->value, $innerSchema, $path . '.' . $key);
             } elseif (!$isOptional) {
-                $this->addError('Missing required property "' . $key . '"', $path . '.' . $key, $node->span->start);
+                $this->addError('Missing required property "' . $key . '"', $path . '.' . $key, $node->span);
             }
         }
     }
@@ -283,7 +283,7 @@ final class Validator
             $this->addError(
                 'Properties are not in the expected order. Expected: ' . \implode(', ', $expectedOrder),
                 $path,
-                $node->span->start,
+                $node->span,
             );
         }
     }
@@ -303,13 +303,13 @@ final class Validator
         $this->addError(
             'Expected ' . $schema->describe() . ', got ' . self::describeNode($node),
             $path,
-            $node->span->start,
+            $node->span,
         );
     }
 
-    private function addError(string $message, string $path, ?Position $position): void
+    private function addError(string $message, string $path, ?Span $span): void
     {
-        $this->errors[] = new ValidationError($message, $path, $position);
+        $this->errors[] = new ValidationError($message, $path, $span);
     }
 
     private static function describeNode(

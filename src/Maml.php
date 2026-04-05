@@ -14,6 +14,7 @@ use Maml\Ast\NullNode;
 use Maml\Ast\ObjectNode;
 use Maml\Ast\Position;
 use Maml\Ast\RawStringNode;
+use Maml\Ast\Span;
 use Maml\Ast\StringNode;
 use Maml\Schema\SchemaType;
 use Maml\Schema\ValidationError;
@@ -82,17 +83,84 @@ final class Maml
         return $result;
     }
 
-    public static function errorSnippet(string $source, Position $pos, string $message): string
-    {
-        $offset = $pos->offset;
-        $pre = \substr($source, \max(0, $offset - 40), \min($offset, 40));
-        $lines = \explode("\n", $pre);
-        $lastLine = \end($lines) ?: '';
-        $postParts = \explode("\n", \substr($source, $offset, 40), 2);
-        $postfix = $postParts[0];
+    public static function errorSnippet(
+        string $source,
+        Position|Span $location,
+        string $message,
+        int $context = 0,
+    ): string {
+        $start = $location instanceof Span ? $location->start : $location;
+        $lineNum = $start->line;
 
-        $snippet = "    {$lastLine}{$postfix}\n";
-        $pointer = '    ' . \str_repeat('.', \strlen($lastLine)) . "^\n";
-        return "{$message} on line {$pos->line}.\n\n{$snippet}{$pointer}";
+        $sourceLines = \explode("\n", $source);
+        $lineIndex = $lineNum - 1;
+        $errorLine = $sourceLines[$lineIndex] ?? '';
+
+        // Convert byte column to character column (0-based)
+        $byteCol = $start->column - 1;
+        $charCol = \mb_strlen(\substr($errorLine, 0, $byteCol), 'UTF-8');
+
+        // Calculate underline width in characters
+        if ($location instanceof Span) {
+            if ($location->end->line === $lineNum) {
+                $endByteCol = $location->end->column - 1;
+                $width = \mb_strlen(\substr($errorLine, $byteCol, $endByteCol - $byteCol), 'UTF-8');
+            } else {
+                $width = \mb_strlen($errorLine, 'UTF-8') - $charCol;
+            }
+        } else {
+            $width = 1;
+        }
+        $width = \max(1, $width);
+
+        // Collect lines to display (context + error line)
+        $firstIndex = \max(0, $lineIndex - $context);
+        $lines = [];
+        for ($i = $firstIndex; $i <= $lineIndex; $i++) {
+            $lines[] = $sourceLines[$i] ?? '';
+        }
+
+        // Truncation (work in character space)
+        $maxWidth = 70;
+        $lineCharLen = \mb_strlen($errorLine, 'UTF-8');
+        $adjustedCol = $charCol;
+
+        if ($lineCharLen > $maxWidth) {
+            // Calculate window centered on error
+            $windowStart = $charCol - \intdiv($maxWidth, 3);
+            $windowStart = \max(0, $windowStart);
+            if ($windowStart + $maxWidth < $charCol + $width) {
+                $windowStart = \max(0, $charCol + $width - $maxWidth);
+            }
+            if ($windowStart + $maxWidth > $lineCharLen) {
+                $windowStart = \max(0, $lineCharLen - $maxWidth);
+            }
+
+            $leftTrim = $windowStart > 0;
+            $rightTrim = ($windowStart + $maxWidth) < $lineCharLen;
+
+            for ($i = 0; $i < \count($lines); $i++) {
+                $visible = \mb_substr($lines[$i], $windowStart, $maxWidth, 'UTF-8');
+                if ($leftTrim && \mb_strlen($visible, 'UTF-8') > 0) {
+                    $visible = '…' . \mb_substr($visible, 1, null, 'UTF-8');
+                }
+                if ($rightTrim && \mb_strlen($visible, 'UTF-8') > 0) {
+                    $visible = \mb_substr($visible, 0, -1, 'UTF-8') . '…';
+                }
+                $lines[$i] = $visible;
+            }
+
+            $adjustedCol = $charCol - $windowStart;
+        }
+
+        // Build output
+        $indent = '    ';
+        $out = "{$message} on line {$lineNum}.\n\n";
+        foreach ($lines as $line) {
+            $out .= $indent . $line . "\n";
+        }
+        $out .= $indent . \str_repeat(' ', $adjustedCol) . \str_repeat('^', $width) . "\n";
+
+        return $out;
     }
 }

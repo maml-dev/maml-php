@@ -574,24 +574,24 @@ final class ValidatorTest extends TestCase
     {
         $errors = $this->validate("{\n  port: \"bad\"\n}", S::object(['port' => S::integer()]));
         $this->assertCount(1, $errors);
-        $this->assertNotNull($errors[0]->position);
-        $this->assertSame(2, $errors[0]->position->line);
+        $this->assertNotNull($errors[0]->span);
+        $this->assertSame(2, $errors[0]->span->start->line);
     }
 
-    public function testMissingKeyPositionPointsAtObject(): void
+    public function testMissingKeySpanPointsAtObject(): void
     {
         $errors = $this->validate('{}', S::object(['name' => S::string()]));
         $this->assertCount(1, $errors);
-        $this->assertNotNull($errors[0]->position);
-        $this->assertSame(1, $errors[0]->position->line);
+        $this->assertNotNull($errors[0]->span);
+        $this->assertSame(1, $errors[0]->span->start->line);
     }
 
-    public function testUnknownKeyPositionPointsAtKey(): void
+    public function testUnknownKeySpanPointsAtKey(): void
     {
         $errors = $this->validate('{bad: 1}', S::object([]));
         $this->assertCount(1, $errors);
-        $this->assertNotNull($errors[0]->position);
-        $this->assertSame(2, $errors[0]->position->column);
+        $this->assertNotNull($errors[0]->span);
+        $this->assertSame(2, $errors[0]->span->start->column);
     }
 
     // ---- Complex schemas ----
