@@ -16,6 +16,7 @@ use Maml\Ast\Position;
 use Maml\Ast\RawStringNode;
 use Maml\Ast\Span;
 use Maml\Ast\StringNode;
+use Maml\Schema\JsonSchemaGenerator;
 use Maml\Schema\SchemaType;
 use Maml\Schema\ValidationError;
 use Maml\Schema\Validator;
@@ -43,6 +44,14 @@ final class Maml
     public static function validate(Document $doc, SchemaType $schema): array
     {
         return Validator::validate($doc, $schema);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function jsonSchema(SchemaType $schema): array
+    {
+        return JsonSchemaGenerator::generate($schema);
     }
 
     public static function printAst(
