@@ -303,6 +303,7 @@ final class JsonSchemaTest extends TestCase
                     ['type' => 'string'],
                     ['type' => 'boolean'],
                 ],
+                'additionalItems' => false,
                 'minItems' => 3,
                 'maxItems' => 3,
             ],
@@ -324,10 +325,17 @@ final class JsonSchemaTest extends TestCase
     public function testEnum(): void
     {
         $this->assertJsonSchema(S::enum('fast', 'safe', 'auto'), [
+            'enum' => ['fast', 'safe', 'auto'],
+        ]);
+    }
+
+    public function testUnionMixedNotEnum(): void
+    {
+        // Union of non-literals still uses oneOf
+        $this->assertJsonSchema(S::union(S::string(), S::null()), [
             'oneOf' => [
-                ['const' => 'fast'],
-                ['const' => 'safe'],
-                ['const' => 'auto'],
+                ['type' => 'string'],
+                ['type' => 'null'],
             ],
         ]);
     }

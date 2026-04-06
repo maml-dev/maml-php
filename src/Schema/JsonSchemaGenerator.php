@@ -132,6 +132,7 @@ final class JsonSchemaGenerator
             return [
                 'type' => 'array',
                 'items' => \array_map(fn(SchemaType $s) => self::convert($s), $schema->elements),
+                'additionalItems' => false,
                 'minItems' => \count($schema->elements),
                 'maxItems' => \count($schema->elements),
             ];
@@ -139,6 +140,19 @@ final class JsonSchemaGenerator
 
         // $schema is UnionType at this point
         /** @var UnionType $schema */
+        // Detect all-literal unions and emit compact "enum" keyword
+        $allLiterals = true;
+        foreach ($schema->branches as $branch) {
+            if (!($branch instanceof LiteralType)) {
+                $allLiterals = false;
+                break;
+            }
+        }
+        if ($allLiterals) {
+            return [
+                'enum' => \array_map(fn(SchemaType $s) => ($s instanceof LiteralType) ? $s->value : null, $schema->branches),
+            ];
+        }
         return [
             'oneOf' => \array_map(fn(SchemaType $s) => self::convert($s), $schema->branches),
         ];
