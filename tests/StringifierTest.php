@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Maml\Tests;
 
+use Maml\Annotated;
 use Maml\Maml;
 use PHPUnit\Framework\TestCase;
 
@@ -143,6 +144,187 @@ final class StringifierTest extends TestCase
             ],
         ];
         $expected = "{\n  name: \"test\"\n  items: [\n    1\n    2\n    3\n  ]\n  nested: {\n    key: \"value\"\n  }\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    // --- Annotated value tests ---
+
+    public function testLeadingCommentOnObjectProperty(): void
+    {
+        $data = [
+            'host' => 'localhost',
+            'port' => Annotated::with(5432)->comment(' Database port'),
+        ];
+        $expected = "{\n  host: \"localhost\"\n  # Database port\n  port: 5432\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testTrailingCommentOnObjectProperty(): void
+    {
+        $data = [
+            'port' => Annotated::with(5432)->trailingComment(' default'),
+        ];
+        $expected = "{\n  port: 5432 # default\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testEmptyLineBeforeObjectProperty(): void
+    {
+        $data = [
+            'host' => 'localhost',
+            'port' => Annotated::with(5432)->emptyLineBefore(),
+        ];
+        $expected = "{\n  host: \"localhost\"\n\n  port: 5432\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testEmptyLineBeforeFirstPropertyIsIgnored(): void
+    {
+        $data = [
+            'host' => Annotated::with('localhost')->emptyLineBefore(),
+        ];
+        $expected = "{\n  host: \"localhost\"\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testMultipleLeadingComments(): void
+    {
+        $data = [
+            'port' => Annotated::with(5432)->comment(' Line 1', ' Line 2'),
+        ];
+        $expected = "{\n  # Line 1\n  # Line 2\n  port: 5432\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testLeadingCommentOnArrayElement(): void
+    {
+        $data = [
+            Annotated::with('first')->comment(' Primary'),
+            'second',
+        ];
+        $expected = "[\n  # Primary\n  \"first\"\n  \"second\"\n]";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testTrailingCommentOnArrayElement(): void
+    {
+        $data = [
+            Annotated::with('first')->trailingComment(' note'),
+            'second',
+        ];
+        $expected = "[\n  \"first\" # note\n  \"second\"\n]";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testEmptyLineBeforeArrayElement(): void
+    {
+        $data = [
+            'first',
+            Annotated::with('second')->emptyLineBefore(),
+        ];
+        $expected = "[\n  \"first\"\n\n  \"second\"\n]";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testDocumentLeadingComment(): void
+    {
+        $data = Annotated::with([
+            'version' => 1,
+        ])->comment(' Config file');
+        $expected = "# Config file\n{\n  version: 1\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testDocumentDanglingComment(): void
+    {
+        $data = Annotated::with(42)->danglingComment(' end');
+        $expected = "42\n# end";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testDanglingCommentOnEmptyObject(): void
+    {
+        $data = [
+            'plugins' => Annotated::with([])->danglingComment(' Add plugins here'),
+        ];
+        $expected = "{\n  plugins: [\n    # Add plugins here\n  ]\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testDanglingCommentOnEmptyAssociativeArray(): void
+    {
+        $obj = new \stdClass();
+        // Empty associative array represented via Annotated
+        $data = Annotated::with([])->danglingComment(' Empty');
+        $expected = "[\n  # Empty\n]";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testDanglingCommentOnNonEmptyArray(): void
+    {
+        $data = Annotated::with([1, 2])->danglingComment(' end of list');
+        $expected = "[\n  1\n  2\n  # end of list\n]";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testNestedAnnotatedValues(): void
+    {
+        $data = [
+            'db' => Annotated::with([
+                'host' => 'localhost',
+                'port' => Annotated::with(5432)->comment(' DB port'),
+            ])->comment(' Database section'),
+        ];
+        $expected = "{\n  # Database section\n  db: {\n    host: \"localhost\"\n    # DB port\n    port: 5432\n  }\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testMixedAnnotatedAndPlainValues(): void
+    {
+        $data = [
+            'a' => 1,
+            'b' => Annotated::with(2)->comment(' annotated'),
+            'c' => 3,
+        ];
+        $expected = "{\n  a: 1\n  # annotated\n  b: 2\n  c: 3\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testAnnotatedRootScalar(): void
+    {
+        $data = Annotated::with(42)->comment(' The answer');
+        $expected = "# The answer\n42";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testTrailingCommentOnContainerValueIsIgnored(): void
+    {
+        $data = [
+            'items' => Annotated::with([1, 2])->trailingComment(' ignored'),
+        ];
+        $expected = "{\n  items: [\n    1\n    2\n  ]\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testCombinedAnnotations(): void
+    {
+        $data = [
+            'host' => 'localhost',
+            'port' => Annotated::with(5432)
+                ->emptyLineBefore()
+                ->comment(' Port setting')
+                ->trailingComment(' default'),
+        ];
+        $expected = "{\n  host: \"localhost\"\n\n  # Port setting\n  port: 5432 # default\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testDocumentWithLeadingAndDanglingComments(): void
+    {
+        $data = Annotated::with([
+            'key' => 'value',
+        ])->comment(' header')->danglingComment(' footer');
+        $expected = "# header\n{\n  key: \"value\"\n  # footer\n}";
         $this->assertSame($expected, Maml::stringify($data));
     }
 }
