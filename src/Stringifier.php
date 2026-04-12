@@ -123,9 +123,6 @@ final class Stringifier
     {
         $keys = array_keys($obj);
         $hasDangling = $annotated !== null && count($annotated->danglingComments) > 0;
-        if (count($keys) === 0 && !$hasDangling) {
-            return '{}';
-        }
         $childIndent = self::getIndent($level + 1);
         $parentIndent = self::getIndent($level);
         $out = "{\n";
