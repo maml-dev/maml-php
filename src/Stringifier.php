@@ -26,6 +26,9 @@ final class Stringifier
             }
             return $leading . self::stringifyObject($value, 0, $annotated);
         }
+        if ($value instanceof \stdClass) {
+            return $leading . self::stringifyObject((array) $value, 0, $annotated);
+        }
         if ($annotated !== null) {
             foreach ($annotated->danglingComments as $c) {
                 $dangling .= "\n" . '#' . $c;
@@ -66,6 +69,9 @@ final class Stringifier
             }
             return self::stringifyObject($value, $level, $annotated);
         }
+        if ($value instanceof \stdClass) {
+            return self::stringifyObject((array) $value, $level, $annotated);
+        }
         throw new \InvalidArgumentException('Unsupported value type: ' . get_debug_type($value));
     }
 
@@ -100,7 +106,7 @@ final class Stringifier
                 }
             }
             $out .= $childIndent . self::doStringify($arr[$i], $level + 1);
-            if ($elAnnotated !== null && $elAnnotated->trailingComment !== null && !is_array($innerValue)) {
+            if ($elAnnotated !== null && $elAnnotated->trailingComment !== null && !is_array($innerValue) && !$innerValue instanceof \stdClass) {
                 $out .= ' #' . $elAnnotated->trailingComment;
             }
         }
@@ -123,6 +129,9 @@ final class Stringifier
     {
         $keys = array_keys($obj);
         $hasDangling = $annotated !== null && count($annotated->danglingComments) > 0;
+        if (count($keys) === 0 && !$hasDangling) {
+            return '{}';
+        }
         $childIndent = self::getIndent($level + 1);
         $parentIndent = self::getIndent($level);
         $out = "{\n";
@@ -146,7 +155,7 @@ final class Stringifier
                 }
             }
             $out .= $childIndent . self::stringifyKey($key) . ': ' . self::doStringify($obj[$key], $level + 1);
-            if ($elAnnotated !== null && $elAnnotated->trailingComment !== null && !is_array($innerValue)) {
+            if ($elAnnotated !== null && $elAnnotated->trailingComment !== null && !is_array($innerValue) && !$innerValue instanceof \stdClass) {
                 $out .= ' #' . $elAnnotated->trailingComment;
             }
         }

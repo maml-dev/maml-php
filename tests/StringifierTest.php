@@ -319,6 +319,53 @@ final class StringifierTest extends TestCase
         $this->assertSame($expected, Maml::stringify($data));
     }
 
+    // --- stdClass (empty object) tests ---
+
+    public function testEmptyStdClass(): void
+    {
+        $this->assertSame('{}', Maml::stringify(new \stdClass()));
+    }
+
+    public function testEmptyObjectCast(): void
+    {
+        $this->assertSame('{}', Maml::stringify((object) []));
+    }
+
+    public function testStdClassWithProperties(): void
+    {
+        $data = (object) ['name' => 'test', 'count' => 3];
+        $expected = "{\n  name: \"test\"\n  count: 3\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testNestedEmptyObject(): void
+    {
+        $data = ['config' => new \stdClass()];
+        $expected = "{\n  config: {}\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testEmptyObjectInArray(): void
+    {
+        $data = [new \stdClass(), new \stdClass()];
+        $expected = "[\n  {}\n  {}\n]";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testAnnotatedEmptyObjectWithDanglingComment(): void
+    {
+        $data = ['plugins' => Annotated::with(new \stdClass())->danglingComment(' Add here')];
+        $expected = "{\n  plugins: {\n    # Add here\n  }\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
+    public function testTrailingCommentOnStdClassIsIgnored(): void
+    {
+        $data = ['x' => Annotated::with(new \stdClass())->trailingComment(' ignored')];
+        $expected = "{\n  x: {}\n}";
+        $this->assertSame($expected, Maml::stringify($data));
+    }
+
     public function testDocumentWithLeadingAndDanglingComments(): void
     {
         $data = Annotated::with([
